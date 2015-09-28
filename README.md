@@ -16,7 +16,7 @@ checkiptools
  * generate_googleip.py   代码文件，Linux 命令 $ python generate_googleip.py
  * googleip.ip.txt        已转换成CIDR格式的IP段，可用于 XX-Net 或者 GoGo Tester
  * googleip.txt           已转换成 xxx.xxx.xxx.xxx-xxx.xxx.xxx.xxx 格式的IP段，可用于 XX-Net
- * ip_original_list.txt   包含原始IP段的文件，支持 checkgoogleip IP组格式，可用 generate_googleip 整合IP段
+ * ip_original_list.txt   包含原始IP段的文件，支持 checkgoogleip IP组格式，可用 generate_googleip 整合IP段，**以后只需将新IP段添加进来用 generate_googleip.bat 转换即可**
  * enjoy it!
 
 任何问题，请到这里反馈，谢谢：https://groups.google.com/forum/#!forum/fqlt
