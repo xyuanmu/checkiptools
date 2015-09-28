@@ -230,8 +230,9 @@ def generate_ip_range():
 generate_ip_range()
 
 
-# 计数IP数量，源代码来自XX-Net
+# 统计IP数量
 def test_load():
+    ip_str = []
     print("\nBegin test load googleip.txt")
     fd = open("googleip.txt", "r")
     if not fd:
@@ -244,11 +245,22 @@ def test_load():
             continue
         begin, end = ip_utils.split_ip(line)
 
+        ip_begin_str = begin.strip().split('.')
+        ip_end_str   = end.strip().split('.')
+
+        if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
+        if ip_end_str[3] == '255':    ip_end_str[3] = '254'
+
+        str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
+        str_2 = (int(ip_end_str[1]) - int(ip_begin_str[1])) * 65024
+        str_3 = (int(ip_end_str[2]) - int(ip_begin_str[2])) * 254
+        str_4 =  int(ip_end_str[3]) - int(ip_begin_str[3])  + 1
+
+        num = str_1 + str_2 + str_3 + str_4
+        amount += num
+
         nbegin = ip_utils.ip_string_to_num(begin)
         nend = ip_utils.ip_string_to_num(end)
-
-        num = nend - nbegin
-        amount += num
         print ip_utils.ip_num_to_string(nbegin), ip_utils.ip_num_to_string(nend), num
 
     fd.close()
