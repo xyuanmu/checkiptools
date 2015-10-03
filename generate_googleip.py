@@ -59,7 +59,6 @@ input_bad_ip_range_lines  = """
 180.96.70.0/23			#江苏省南京市电信
 180.149.61.0/24			#印度NKN Research Institutes, 用了会出现错误
 180.150.1.0/24			#澳大利亚 CZ88.NET, 用了会出现错误
-180.188.250.0/24		#印度 CZ88.NET, 用了会出现错误
 182.254.0.0/24			#中国	广东	广州
 202.69.26.0/24			#中国	广东	深圳
 202.86.162.0/24			#中国	澳门
@@ -232,12 +231,8 @@ generate_ip_range()
 
 # 统计IP数量
 def test_load():
-    ip_str = []
     print("\nBegin test load googleip.txt")
     fd = open("googleip.txt", "r")
-    if not fd:
-        print "open googleip.txt fail."
-        exit()
 
     amount = 0
     for line in fd.readlines():
