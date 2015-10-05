@@ -2,7 +2,7 @@ checkiptools
 ============
 
 集成 checkgoogleip，python(带netaddr)，以及一些实用的小工具。
-源代码取自 checkgoogleip、XX-Net、双手码出，感谢大家的辛勤付出！
+源代码取自 [checkgoogleip](https://github.com/moonshawdo/checkgoogleip)、[XX-Net](https://github.com/XX-net/XX-Net)、双手码出，感谢大家的辛勤付出！
 
 
 目录文件说明：
@@ -18,5 +18,3 @@ checkiptools
  * googleip.txt           已转换成 xxx.xxx.xxx.xxx-xxx.xxx.xxx.xxx 格式的IP段，可用于 XX-Net
  * ip_original_list.txt   包含原始IP段的文件，支持 checkgoogleip IP组格式，可用 generate_googleip 整合IP段，**以后只需将新IP段添加进来用 generate_googleip.bat 转换即可**
  * enjoy it!
-
-任何问题，请到这里反馈，谢谢：https://groups.google.com/forum/#!forum/fqlt
