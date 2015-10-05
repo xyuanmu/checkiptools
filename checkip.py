@@ -92,7 +92,7 @@ g_ssldomain = ("google.com",)
 g_excludessdomain=()
 #检查组织是否为google，如果有其他名称，需要添加，暂时只发现一个
 g_organizationName = ("Google Inc",)
-g_blackiplist = ("216.",)
+g_blackiplist = ("216.58.",)
 
 
 "是否自动删除记录查询成功的非google的IP文件，方便下次跳过连接，0为不删除，1为删除"
