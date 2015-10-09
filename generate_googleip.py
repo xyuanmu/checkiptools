@@ -125,7 +125,7 @@ def merge_range(input_ip_range_list):
 
         #print "now:",ip_utils.ip_num_to_string(begin), ip_utils.ip_num_to_string(end)
 
-        if begin > last_end + 2:
+        if begin > last_end + 1:
             #print "add:",ip_utils.ip_num_to_string(begin), ip_utils.ip_num_to_string(end)
             output_ip_range_list.append([last_begin, last_end])
             last_begin = begin
