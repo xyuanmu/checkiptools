@@ -88,7 +88,7 @@ g_googleipfile = os.path.join(g_filedir,"googleip.txt")
 if g_usegevent == 1 and g_maxthreads > 1000:
     g_maxthreads = 128
 
-g_ssldomain = ("google.com","*.google.com","googlevideo.com","*.googlevideo.com")
+g_ssldomain = ("google.com","*.googlevideo.com")
 g_excludessdomain=()
 #检查组织是否为google，如果有其他名称，需要添加，暂时只发现一个
 g_organizationName = ("Google Inc",)
