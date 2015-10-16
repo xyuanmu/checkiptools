@@ -195,6 +195,7 @@ def test_load():
 
     amount = 0
     for line in fd.readlines():
+        line = line.strip('\n')
         if len(line) == 0 or line[0] == '#':
             continue
         begin, end = ip_utils.split_ip(line)
