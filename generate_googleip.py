@@ -23,64 +23,11 @@ import ip_utils
 # "xxx.xxx.xxx.xxx"         （单个ip）
 
 # 包含原始IP段的文件
-f = open("ip_original_list.txt")
-input_good_range_lines = f.read()
+input_good_range_lines = open("ip_range_origin.txt").read()
 
-# IP段黑名单
-input_bad_ip_range_lines  = """
-45.64.20.0/24			#中国澳门
-58.205.224.0/24			#湖北省武汉市华中科技大学教育网无线校园项目
-58.205.224.0/24			#中国	湖北	武汉	华中科技大学
-58.240.77.0/24			#中国	江苏	南京
-58.240.77.0/24			#江苏省南京市联通
-59.78.209.0/24			#中国	上海	上海
-59.78.209.0/24			#上海市腾讯公司教育网节点
-101.198.128.0/19		#北京市奇虎360科技有限公司
-103.7.28.0/22			#香港腾讯公司数据中心
-110.75.151.0/24			#中国	浙江	杭州
-111.30.128.0/24			#中国	天津	天津
-111.30.136.0/24			#中国	天津	天津
-111.30.139.0/24			#中国	天津	天津
-111.30.140.0/24			#中国	天津	天津
-115.159.0.0/24			#中国	上海	上海
-119.28.0.0/16			#香港北京康盛新创科技有限责任公司
-119.29.0.0/16			#广东省广州市海珠区腾讯云服务器(广州市海珠区新港中路397号TIT创意园)
-119.29.0.0/24			#中国	广东	广州
-119.29.17.0/24			#中国	广东	广州
-119.57.55.0/24			#中国	北京	北京
-119.57.55.0/24			#北京市东四IDC机房
-192.119.16.0/20			#美国, 用了会出现错误
-119.147.146.0/24		#中国	广东	东莞
-121.51.0.0/24			#中国	广东
-121.78.52.0/24			#韩国, 用了会出现错误
-121.78.71.0/24			#韩国, 用了会出现错误
-121.78.74.0/24			#韩国, 用了会出现错误
-121.78.206.0/24			#韩国, 用了会出现错误
-121.194.0.0/24			#中国	北京	北京
-121.195.178.0/24		#中国	北京	北京
-124.160.89.0/24 		#中国	浙江	杭州
-130.211.0.0/16			#用了会出现错误
-180.93.32.0/24			#越南 CZ88.NET, 用了会出现错误
-180.96.70.0/23			#江苏省南京市电信
-180.149.61.0/24			#印度NKN Research Institutes, 用了会出现错误
-180.150.1.0/24			#澳大利亚 CZ88.NET, 用了会出现错误
-182.254.0.0/24			#中国	广东	广州
-202.69.26.0/24			#中国	广东	深圳
-202.86.162.0/24			#中国	澳门
-202.106.93.0/24			#中国	北京	北京
-203.195.128.0/24		#中国	广东	广州
-203.208.32.0/24			#中国	北京	北京	GOOGLE
-203.208.40.0/24			#中国	北京	北京	GOOGLE
-203.208.41.0/24			#中国	北京	北京	GOOGLE
-203.208.48.0/24			#中国	北京	北京	GOOGLE
-203.208.49.0/24			#中国	北京	北京	GOOGLE
-203.208.50.0/24			#中国	北京	北京	GOOGLE
-203.208.52.0/24			#中国	北京	北京	GOOGLE
-203.205.128.0/19		#香港腾讯公司数据中心
-216.58.196.0/24			#有问题216段
-216.58.208.0/20			#有问题216段
-255.255.255.255/32		#for algorithm
-"""
+# 包含IP段黑名单的文件
+input_bad_ip_range_lines = open("ip_range_bad.txt").read()
+
 
 def print_range_list(ip_range_list):
     for ip_range in ip_range_list:
@@ -147,7 +94,6 @@ def merge_range(input_ip_range_list):
 def filter_ip_range(good_range, bad_range):
     out_good_range = []
     bad_i = 0
-    bad_range_num = len(bad_range)
 
     bad_begin, bad_end = bad_range[bad_i]
 
@@ -155,6 +101,7 @@ def filter_ip_range(good_range, bad_range):
         while True:
             if good_begin > good_end:
                 print("bad good ip range when filter:%s-%s"  % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(good_end)))
+                break
             if good_end < bad_begin:
                 # case:
                 #     [  good  ]
@@ -176,11 +123,20 @@ def filter_ip_range(good_range, bad_range):
                 if bad_begin - 1 > good_begin:
                     out_good_range.append([good_begin, bad_begin - 1])
                 break
-            elif good_begin >= bad_begin and good_end >= bad_end:
+            elif good_begin >= bad_begin and good_end == bad_end:
+                # case:
+                #           [   good   ]
+                #     [      bad       ]
+                print("cut bad ip case 2:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(bad_end)))
+
+                bad_i += 1
+                bad_begin, bad_end = bad_range[bad_i]
+                break
+            elif good_begin >= bad_begin and good_end > bad_end:
                 # case:
                 #           [   good   ]
                 #     [    bad  ]
-                print("cut bad ip case 2:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(bad_end)))
+                print("cut bad ip case 3:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(bad_end)))
                 good_begin = bad_end + 1
                 bad_i += 1
                 bad_begin, bad_end = bad_range[bad_i]
@@ -190,7 +146,7 @@ def filter_ip_range(good_range, bad_range):
                 #     [     good     ]
                 #         [  bad  ]
                 out_good_range.append([good_begin, bad_begin - 1])
-                print("cut bad ip case 3:%s - %s" % (ip_utils.ip_num_to_string(bad_begin), ip_utils.ip_num_to_string(bad_end)))
+                print("cut bad ip case 4:%s - %s" % (ip_utils.ip_num_to_string(bad_begin), ip_utils.ip_num_to_string(bad_end)))
                 good_begin = bad_end + 1
                 bad_i += 1
                 bad_begin, bad_end = bad_range[bad_i]
@@ -199,12 +155,13 @@ def filter_ip_range(good_range, bad_range):
                 # case:
                 #          [good]
                 #      [    bad    ]
-                print("cut bad ip case 4:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(good_end)))
+                print("cut bad ip case 5:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(good_end)))
                 break
             else:
                 print("any case?")
 
     return out_good_range
+
 
 def generate_ip_range():
     print("\nGood ip range:")
@@ -217,9 +174,6 @@ def generate_ip_range():
 
     print("\nCut Bad ip range:")
     ip_range_list = filter_ip_range(ip_range_list, bad_range_list)
-    
-    print("\nOutput ip range")
-    print_range_list(ip_range_list)
 
     # write out
     fd = open("googleip.txt", "w")
@@ -261,7 +215,7 @@ def test_load():
 
         nbegin = ip_utils.ip_string_to_num(begin)
         nend = ip_utils.ip_string_to_num(end)
-        print ip_utils.ip_num_to_string(nbegin), ip_utils.ip_num_to_string(nend), num
+        #print ip_utils.ip_num_to_string(nbegin), ip_utils.ip_num_to_string(nend), num
 
     fd.close()
     print "amount ip:", amount
