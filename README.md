@@ -6,8 +6,8 @@ CheckIpTools
 
 
 目录文件说明：
- * !ptools.bat          转换IP小工具，输入相应编号进行操作
- * !ptools.py           代码文件，Linx 命令 $ python !ptools.py
+ * !iptools.bat         转换IP小工具，输入相应编号进行操作
+ * !iptools.py          代码文件，Linx 命令 $ python !iptools.py
  * checkip.bat          用于扫描谷歌IP工具的工具
  * checkip.py           代码文件，Linux 命令 $ python checkip.py，修改说明参考：[README2.md](https://github.com/xyuanmu/checkiptools/blob/master/README2.md)
  * googleip.ip.txt      已转换成CIDR格式的IP段，可用于 [XX-Net](https://github.com/XX-net/XX-Net) 或者 GoGo Tester
