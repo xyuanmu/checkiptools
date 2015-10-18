@@ -6,16 +6,11 @@ import os
 import netaddr
 import ip_utils
 
-
-# generate_ip_range 整合IP段去黑名单IP并排序
-# test_load 计数IP数量
-# ip_range_to_cidr 将IP转换为CIDR格式
-
 # Support format(支持的格式):
 # # Comment (#后面为注释）
 #
 # range seperater:
-# 每个范围可以用 逗号(,) 和竖线(|) 或分行进行分割
+# 每个范围可以用 半角逗号(,) 和竖线(|) 或分行进行分割
 #
 # Single rang format: (单个范围的格式)：
 # "xxx.xxx.xxx-xxx.xxx-xxx" （范围格式）
@@ -65,6 +60,7 @@ def parse_range_string(input_lines):
 
     return ip_range_list
 
+
 def merge_range(input_ip_range_list):
     output_ip_range_list = []
     range_num = len(input_ip_range_list)
@@ -91,6 +87,7 @@ def merge_range(input_ip_range_list):
     output_ip_range_list.append([last_begin, last_end])
 
     return output_ip_range_list
+
 
 def filter_ip_range(good_range, bad_range):
     out_good_range = []
@@ -164,6 +161,7 @@ def filter_ip_range(good_range, bad_range):
     return out_good_range
 
 
+# 整合IP段去黑名单IP段并排序
 def generate_ip_range():
     print("\nMerge Good ip range:")
     ip_range_list = parse_range_string(input_good_range_lines)
@@ -198,7 +196,6 @@ def test_load():
         if len(line) == 0 or line[0] == '#':
             continue
         begin, end = ip_utils.split_ip(line)
-
         ip_begin_str = begin.strip().split('.')
         ip_end_str   = end.strip().split('.')
 
@@ -212,18 +209,16 @@ def test_load():
 
         num = str_1 + str_2 + str_3 + str_4
         amount += num
-
         print begin, end, num
 
     fd.close()
     print "amount ip:", amount, '\n'
 
 
-# 转换IP范围，需要 netaddr，将IP段转换成 xxx.xxx.xxx.xxx/xx
+# 转换IP范围，需要 netaddr，将IP转换为CIDR格式
 def ip_range_to_cidr():
 
     ip_lists = []
-    ip_lists_2 = []
     ip_range = open('googleip.txt')
 
     for line in ip_range.readlines():
@@ -234,66 +229,42 @@ def ip_range_to_cidr():
         cidrs = netaddr.iprange_to_cidrs(begin, end)
         for k, v in enumerate(cidrs):
             iplist = v
-            ip_lists_2.append(iplist)
-    #print ip_lists_2
+            ip_lists.append(iplist)
 
     fd = open('googleip.ip.txt', 'w')
-    for ip_cidr in ip_lists_2:
+    for ip_cidr in ip_lists:
         # print ip_cidr
         fd.write(str(ip_cidr) + "\n")
     fd.close()
     print("\n    convert finished!\n")
 
 
-iplist = []
-
-def ip_bind(timeout):
+# convert_ip_tmpok(延时, 格式) 转换ip_tmpok.txt
+def convert_ip_tmpok(timeout, format):
+    iplist = []
     if os.path.exists('ip_tmpok.txt'):
         with open('ip_tmpok.txt') as ip_tmpok:
             for x in ip_tmpok:
                 sline = x.strip().split(' ')
                 iplist.append(sline)
                 if sline[1].startswith('NA_'): sline[1] = sline[1].lstrip('NA_')
-        with open('ip_bind.txt', 'w') as ip_bind:
+        if format == 1:
+            ip_out = 'ip_bind.txt'
+        elif format == 2:
+            ip_out = 'ip_json.txt'
+        elif format == 3:
+            ip_out = 'ip_xxnet.txt'
+        with open(ip_out, 'w') as ip_output:
             iplist.sort(key=lambda x: int(x[1]))
-            out = '|'.join(x[0] for x in iplist if int(x[1]) < timeout)
+            if format == 1:
+                out = '|'.join(x[0] for x in iplist if int(x[1]) < timeout)
+            elif format == 2:
+                out = '"'+'", "'.join(x[0] for x in iplist if int(x[1]) < timeout)+'"'
+            elif format == 3:
+                out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in iplist)
             print(out + '\n')
             # print(iplist)
-            ip_bind.write(out)
-    else:
-        print "\n    doesn't exist ip_tmpok.txt\n"
-
-
-def ip_json(timeout):
-    if os.path.exists('ip_tmpok.txt'):
-        with open('ip_tmpok.txt') as ip_tmpok:
-            for x in ip_tmpok:
-                sline = x.strip().split(' ')
-                iplist.append(sline)
-                if sline[1].startswith('NA_'): sline[1] = sline[1].lstrip('NA_')
-        with open('ip_json.txt', 'w') as ip_json:
-            iplist.sort(key=lambda x: int(x[1]))
-            out = '"'+'", "'.join(x[0] for x in iplist if int(x[1]) < timeout)+'"'
-            print(out + '\n')
-            # print(iplist)
-            ip_json.write(out)
-    else:
-        print "\n    doesn't exist ip_tmpok.txt\n"
-
-
-def ip_xxnet():
-    if os.path.exists('ip_tmpok.txt'):
-        with open('ip_tmpok.txt') as ip_tmpok:
-            for x in ip_tmpok:
-                sline = x.strip().split(' ')
-                iplist.append(sline)
-                if sline[1].startswith('NA_'): sline[1] = sline[1].lstrip('NA_')
-        with open('ip_xxnet.txt', 'w') as ip_xxnet:
-            iplist.sort(key=lambda x: int(x[1]))
-            out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in iplist)
-            print(out + '\n')
-            # print(iplist)
-            ip_xxnet.write(out)
+            ip_output.write(out)
     else:
         print "\n    doesn't exist ip_tmpok.txt\n"
 
@@ -301,11 +272,11 @@ def ip_xxnet():
 def convertip(iplist):
     if iplist == "": return
     fd = open('ip_output.txt', 'w')
+    iplist = iplist.replace(' ','')
     if '|' in iplist:
         out = '"' + iplist.replace('|', '", "') + '"'
     else:
         ip_str = []
-        iplist = iplist.replace(' ','')
         ip_str = iplist.replace('"','').split(',')
         out = '|'.join(x for x in ip_str)
     print('\n' + out + '\n')
@@ -344,11 +315,11 @@ def main():
         )
         if timeout == '': timeout = 2000
         if cmd == '1':
-            ip_bind(int(timeout))
+            convert_ip_tmpok(int(timeout), 1)
         elif cmd == '2':
-            ip_json(int(timeout))
+            convert_ip_tmpok(int(timeout), 2)
     elif cmd == '3':
-        ip_xxnet()
+        convert_ip_tmpok(0,3)
     elif cmd == '4':
         generate_ip_range()
     elif cmd == '5':
