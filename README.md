@@ -5,9 +5,9 @@ CheckIpTools
 源代码取自 [checkgoogleip](https://github.com/moonshawdo/checkgoogleip)、[XX-Net](https://github.com/XX-net/XX-Net)、双手码出，感谢大家的辛勤付出！
 
 ## 下载地址
-Windows版：[CheckIpTools](https://github.com/xyuanmu/checkiptools/archive/master.zip)
-Linux版：[CheckIpTools For Linux](https://github.com/xyuanmu/checkiptools/archive/Linux.zip)
-因新版包含中文字符，[若乱码请下载1.0版](https://codeload.github.com/xyuanmu/checkiptools/zip/1.0)
+* Windows：[CheckIpTools](https://github.com/xyuanmu/checkiptools/archive/master.zip)
+* Linux：[CheckIpTools For Linux](https://github.com/xyuanmu/checkiptools/archive/Linux.zip)
+* 因新版包含中文字符：[若乱码请下载1.0版](https://codeload.github.com/xyuanmu/checkiptools/zip/1.0)
 
 
 ## 目录文件说明：
