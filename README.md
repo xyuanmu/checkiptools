@@ -12,7 +12,7 @@ CheckIpTools
 
 ## 目录文件说明：
  * !iptools.bat         转换IP小工具，输入相应编号进行操作
- * checkip.bat          用于扫描谷歌IP工具的工具checkip.py，提取自[checkgoogleip](https://github.com/moonshawdo/checkgoogleip)，使用说明参考：[README2.md](https://github.com/xyuanmu/checkiptools/blob/master/README2.md)
+ * checkip.bat          用于扫描谷歌IP工具的工具，提取自[checkgoogleip](https://github.com/moonshawdo/checkgoogleip)，使用说明参考：[README2.md](https://github.com/xyuanmu/checkiptools/blob/master/README2.md)
  * googleip.ip.txt      已转换成CIDR格式的IP段，可用于 [XX-Net](https://github.com/XX-net/XX-Net) 或者 GoGo Tester
  * googleip.txt         已转换成 xxx.xxx.xxx.xxx-xxx.xxx.xxx.xxx 格式的IP段，可用于 [XX-Net](https://github.com/XX-net/XX-Net)
  * ip_range_bad.txt     包含IP段黑名单的文件，支持 checkgoogleip IP组格式，支持 # 注释
