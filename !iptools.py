@@ -111,8 +111,11 @@ def filter_ip_range(good_range, bad_range):
                 #                   [  good  ]
                 #     [   bad   ]
                 bad_i += 1
-                bad_begin, bad_end = bad_range[bad_i]
-                continue
+                if bad_i < len(bad_range):
+                    bad_begin, bad_end = bad_range[bad_i]
+                    continue
+                else:
+                    break
             elif good_begin <= bad_begin and good_end <= bad_end:
                 # case:
                 #     [   good    ]
@@ -128,7 +131,8 @@ def filter_ip_range(good_range, bad_range):
                 print("cut bad ip case 2:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(bad_end)))
 
                 bad_i += 1
-                bad_begin, bad_end = bad_range[bad_i]
+                if bad_i < len(bad_range):
+                    bad_begin, bad_end = bad_range[bad_i]
                 break
             elif good_begin >= bad_begin and good_end > bad_end:
                 # case:
@@ -137,8 +141,11 @@ def filter_ip_range(good_range, bad_range):
                 print("cut bad ip case 3:%s - %s" % (ip_utils.ip_num_to_string(good_begin), ip_utils.ip_num_to_string(bad_end)))
                 good_begin = bad_end + 1
                 bad_i += 1
-                bad_begin, bad_end = bad_range[bad_i]
-                continue
+                if bad_i < len(bad_range):
+                    bad_begin, bad_end = bad_range[bad_i]
+                    continue
+                else:
+                    break
             elif good_begin <= bad_begin and good_end >= bad_end:
                 # case:
                 #     [     good     ]
@@ -147,8 +154,11 @@ def filter_ip_range(good_range, bad_range):
                 print("cut bad ip case 4:%s - %s" % (ip_utils.ip_num_to_string(bad_begin), ip_utils.ip_num_to_string(bad_end)))
                 good_begin = bad_end + 1
                 bad_i += 1
-                bad_begin, bad_end = bad_range[bad_i]
-                continue
+                if bad_i < len(bad_range):
+                    bad_begin, bad_end = bad_range[bad_i]
+                    continue
+                else:
+                    break
             elif good_begin >= bad_begin and good_end <= bad_end:
                 # case:
                 #          [good]
@@ -185,14 +195,43 @@ def generate_ip_range():
     fd.close()
 
 
-# 统计IP数量
+def test_ip_amount(ip_lists):
+    amount = 0
+    for ip in ip_lists:
+        if len(ip) == 0 or ip[0] == '#':
+            continue
+        begin, end = ip_utils.split_ip(ip)
+        ip_begin_str = begin.strip().split('.')
+        ip_end_str   = end.strip().split('.')
+
+        if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
+        if ip_end_str[3] == '255':    ip_end_str[3] = '254'
+
+        str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
+        str_2 = (int(ip_end_str[1]) - int(ip_begin_str[1])) * 65024
+        str_3 = (int(ip_end_str[2]) - int(ip_begin_str[2])) * 254
+        str_4 =  int(ip_end_str[3]) - int(ip_begin_str[3])  + 1
+
+        num = str_1 + str_2 + str_3 + str_4
+        amount += num
+        print begin, end, num
+    print "amount ip:", amount, '\n'
+    return amount
+
+
+# 统计IP数量，超过1KW自动分割
 def test_load():
     print("\nBegin test load googleip.txt")
     fd = open("googleip.txt", "r")
 
+    i = 1
     amount = 0
-    for line in fd.readlines():
-        line = line.strip('\n')
+    ip_lists = []
+
+    ip_range_list = re.split("\r|\n", fd.read())
+    ip_amount = test_ip_amount(ip_range_list)
+
+    for line in ip_range_list:
         if len(line) == 0 or line[0] == '#':
             continue
         begin, end = ip_utils.split_ip(line)
@@ -209,14 +248,25 @@ def test_load():
 
         num = str_1 + str_2 + str_3 + str_4
         amount += num
-        print begin, end, num
+        ip_lists.append([begin, end])
 
+        #print begin, end, num
+        if amount > i*10000000:
+            filename = 'googleip-%s.txt' % i
+            print "ip amount over %s0000000" % i
+            open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
+            i += 1
+            ip_lists = []
+        elif amount == ip_amount:
+            filename = 'googleip-%s.txt' % i
+            print "ip amount below %s0000000" % i
+            if amount > 1000000 : open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
+        continue
     fd.close()
-    print "amount ip:", amount, '\n'
 
 
 # 转换IP范围，需要 netaddr，将IP转换为CIDR格式
-def ip_range_to_cidr():
+def googleip_to_cidr():
 
     ip_lists = []
     ip_range = open('googleip.txt')
@@ -323,12 +373,12 @@ def main():
     elif cmd == '4':
         generate_ip_range()
     elif cmd == '5':
-        ip_range_to_cidr()
+        googleip_to_cidr()
     elif cmd == '6':
         test_load()
     elif cmd == '7':
         generate_ip_range()
-        ip_range_to_cidr()
+        googleip_to_cidr()
         test_load()
     elif cmd == '8':
         iplist = raw_input(u"""
