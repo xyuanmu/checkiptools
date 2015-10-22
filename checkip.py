@@ -1042,7 +1042,7 @@ def checkip(ip):
         print "ssl subject: ",cert.get_subject().get_components()
         c.shutdown()
         s.close()
-    elif g_usegevent == 1:
+    else:
         print "use gevent to check ",ip
         s = socket.socket()
         s.settimeout(10)
@@ -1057,8 +1057,35 @@ def checkip(ip):
             print "ssl key: ",cert
         c.close()
 
+
+def move_over(src, dest_dir):
+    dest = os.path.join(g_filedir, dest_dir + src)
+    src  = os.path.join(g_filedir, src)
+    if os.path.exists(dest):
+        os.remove(dest)
+    shutil.move(src, dest)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         checkip(sys.argv[1])
     else:
-        list_ping()
+        files = os.listdir(g_filedir)
+        i = 0
+        for item in files:
+            if "googleip-" in item:
+                i = item[len(item)-5]
+                if os.path.exists("googleip-%s.txt" % i):
+                    g_googleipfile = os.path.join(g_filedir,"googleip-%s.txt" % i)
+                    evt_ipramdomend.clear()
+                    print "\n================================================================================\nbegin check googleip-%s.txt" % i
+                    list_ping()
+                    if not os.path.exists(g_filedir + "/tmp"): os.mkdir("tmp")
+                    if os.path.exists("ip_tmperror.txt"): os.rename("ip_tmperror.txt", "ip_tmperror-%s.txt" % i)
+                    if os.path.exists("ip_tmpno.txt"): os.rename("ip_tmpno.txt", "ip_tmpno-%s.txt" % i)
+                    if os.path.exists("ip_tmpok.txt"): os.rename("ip_tmpok.txt", "ip_tmpok-%s.txt" % i)
+                    if os.path.exists("ip_tmperror-%s.txt" % i): move_over("ip_tmperror-%s.txt" % i, "tmp/")
+                    if os.path.exists("ip_tmpno-%s.txt" % i): move_over("ip_tmpno-%s.txt" % i, "tmp/")
+                    if os.path.exists("ip_tmpok-%s.txt" % i): move_over("ip_tmpok-%s.txt" % i, "tmp/")
+            elif item == 'googleip.txt' and i == 0:
+                list_ping()

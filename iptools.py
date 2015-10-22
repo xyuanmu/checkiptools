@@ -195,24 +195,29 @@ def generate_ip_range():
     fd.close()
 
 
+def test_ip_num(begin, end):
+    ip_begin_str = begin.strip().split('.')
+    ip_end_str   = end.strip().split('.')
+
+    if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
+    if ip_end_str[3] == '255':    ip_end_str[3] = '254'
+
+    str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
+    str_2 = (int(ip_end_str[1]) - int(ip_begin_str[1])) * 65024
+    str_3 = (int(ip_end_str[2]) - int(ip_begin_str[2])) * 254
+    str_4 =  int(ip_end_str[3]) - int(ip_begin_str[3])  + 1
+
+    num = str_1 + str_2 + str_3 + str_4
+    return num
+
+
 def test_ip_amount(ip_lists):
     amount = 0
     for ip in ip_lists:
         if len(ip) == 0 or ip[0] == '#':
             continue
         begin, end = ip_utils.split_ip(ip)
-        ip_begin_str = begin.strip().split('.')
-        ip_end_str   = end.strip().split('.')
-
-        if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
-        if ip_end_str[3] == '255':    ip_end_str[3] = '254'
-
-        str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
-        str_2 = (int(ip_end_str[1]) - int(ip_begin_str[1])) * 65024
-        str_3 = (int(ip_end_str[2]) - int(ip_begin_str[2])) * 254
-        str_4 =  int(ip_end_str[3]) - int(ip_begin_str[3])  + 1
-
-        num = str_1 + str_2 + str_3 + str_4
+        num = test_ip_num(begin, end)
         amount += num
         print begin, end, num
     print "amount ip:", amount, '\n'
@@ -226,6 +231,7 @@ def test_load():
 
     i = 1
     amount = 0
+    ip_rip = 10000000    # 以1KW个IP分割IP段
     ip_lists = []
 
     ip_range_list = re.split("\r|\n", fd.read())
@@ -235,32 +241,21 @@ def test_load():
         if len(line) == 0 or line[0] == '#':
             continue
         begin, end = ip_utils.split_ip(line)
-        ip_begin_str = begin.strip().split('.')
-        ip_end_str   = end.strip().split('.')
-
-        if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
-        if ip_end_str[3] == '255':    ip_end_str[3] = '254'
-
-        str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
-        str_2 = (int(ip_end_str[1]) - int(ip_begin_str[1])) * 65024
-        str_3 = (int(ip_end_str[2]) - int(ip_begin_str[2])) * 254
-        str_4 =  int(ip_end_str[3]) - int(ip_begin_str[3])  + 1
-
-        num = str_1 + str_2 + str_3 + str_4
+        num = test_ip_num(begin, end)
         amount += num
         ip_lists.append([begin, end])
 
         #print begin, end, num
-        if amount > i*10000000:
+        if amount > i*ip_rip:
             filename = 'googleip-%s.txt' % i
-            print "ip amount over %s0000000" % i
+            print "ip amount over %s" % (i*ip_rip)
             open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
             i += 1
             ip_lists = []
         elif amount == ip_amount:
             filename = 'googleip-%s.txt' % i
-            print "ip amount below %s0000000" % i
-            if amount > 1000000 : open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
+            print "ip amount below %s" % (i*ip_rip), '\n'
+            if amount > ip_rip : open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
         continue
     fd.close()
 
@@ -278,8 +273,8 @@ def googleip_to_cidr():
         begin, end = ip_utils.split_ip(line)
         cidrs = netaddr.iprange_to_cidrs(begin, end)
         for k, v in enumerate(cidrs):
-            iplist = v
-            ip_lists.append(iplist)
+            ip = v
+            ip_lists.append(ip)
 
     fd = open('googleip.ip.txt', 'w')
     for ip_cidr in ip_lists:
@@ -350,7 +345,7 @@ def main():
 
  5. 转换 googleip.txt 中的IP段为CIDR格式, 并生成 googleip.ip.txt
 
- 6. 统计 googleip.txt 中的IP数量
+ 6. 统计 googleip.txt 中的IP数量, 超过1KW自动分割
 
  7. 同时执行4、5、6三条命令
 
