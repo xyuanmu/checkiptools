@@ -25,7 +25,7 @@ CheckIpTools
 
 ## 20151022更新
 * 新增IP数量超过1KW时自动分割，生成 googleip-i.txt 命名的IP段文件
-* 优先扫描 googleip-i.txt 文件IP段，逐个扫描并将扫描结果保存到tmp文件夹，若无则扫描 googleip.txt
+* 优先扫描 googleip-i.txt 文件IP段，逐个扫描并将结果存到tmp文件夹，若无则扫描 googleip.txt
 
 ## 20151018更新
 * 优化代码
