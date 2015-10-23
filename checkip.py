@@ -1087,5 +1087,6 @@ if __name__ == '__main__':
                     if os.path.exists("ip_tmperror-%s.txt" % i): move_over("ip_tmperror-%s.txt" % i, "tmp/")
                     if os.path.exists("ip_tmpno-%s.txt" % i): move_over("ip_tmpno-%s.txt" % i, "tmp/")
                     if os.path.exists("ip_tmpok-%s.txt" % i): move_over("ip_tmpok-%s.txt" % i, "tmp/")
+                    if os.path.exists("googleip-%s.txt" % i): os.remove("googleip-%s.txt" % i)
             elif item == 'googleip.txt' and i == 0:
                 list_ping()
