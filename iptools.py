@@ -247,13 +247,13 @@ def test_load():
 
         #print begin, end, num
         if amount > i*ip_rip:
-            filename = 'googleip-%s.txt' % i
+            filename = 'googleip-%03d.txt' % i
             print "ip amount over %s" % (i*ip_rip)
             open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
             i += 1
             ip_lists = []
         elif amount == ip_amount:
-            filename = 'googleip-%s.txt' % i
+            filename = 'googleip-%03d.txt' % i
             print "ip amount below %s" % (i*ip_rip), '\n'
             if amount > ip_rip : open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
         continue
