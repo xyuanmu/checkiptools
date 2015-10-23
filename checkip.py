@@ -1074,7 +1074,7 @@ if __name__ == '__main__':
         i = 0
         for item in files:
             if "googleip-" in item:
-                i = item[len(item)-5]
+                i = re.findall(r'([0-9]+)',item)[0]
                 if os.path.exists("googleip-%s.txt" % i):
                     g_googleipfile = os.path.join(g_filedir,"googleip-%s.txt" % i)
                     evt_ipramdomend.clear()
