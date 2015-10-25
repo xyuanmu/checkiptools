@@ -185,14 +185,13 @@ def generate_ip_range():
     ip_range_list = filter_ip_range(ip_range_list, bad_range_list)
 
     # write out
-    fd = open("googleip.txt", "w")
+    ip_out_lists = []
     for ip_range in ip_range_list:
         begin = ip_range[0]
         end = ip_range[1]
-        #print ip_utils.ip_num_to_string(begin), ip_utils.ip_num_to_string(end)
-        fd.write(ip_utils.ip_num_to_string(begin)+ "-" + ip_utils.ip_num_to_string(end)+"\n")
-
-    fd.close()
+        ip_out_lists.append(ip_utils.ip_num_to_string(begin) + "-" + ip_utils.ip_num_to_string(end))
+    ip_out_lists = ip_range_to_cidr(ip_out_lists)
+    open('googleip.txt', 'w').write('\n'.join(x for x in ip_out_lists))
 
 
 def test_ip_num(begin, end):
@@ -243,45 +242,37 @@ def test_load():
         begin, end = ip_utils.split_ip(line)
         num = test_ip_num(begin, end)
         amount += num
-        ip_lists.append([begin, end])
+        ip_lists.append(line)
 
         #print begin, end, num
+        filename = 'googleip-%03d.txt' % i
         if amount > i*ip_rip:
-            filename = 'googleip-%03d.txt' % i
             print "ip amount over %s" % (i*ip_rip)
-            open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
+            ip_lists = ip_range_to_cidr(ip_lists)
+            open(filename,'w').write('\n'.join(x for x in ip_lists))
             i += 1
             ip_lists = []
         elif amount == ip_amount:
-            filename = 'googleip-%03d.txt' % i
             print "ip amount below %s" % (i*ip_rip), '\n'
-            if amount > ip_rip : open(filename,'w').write('\n'.join(x + '-' + y for x, y in ip_lists))
+            ip_lists = ip_range_to_cidr(ip_lists)
+            if amount > ip_rip : open(filename,'w').write('\n'.join(x for x in ip_lists))
         continue
     fd.close()
 
 
 # 转换IP范围，需要 netaddr，将IP转换为CIDR格式
-def googleip_to_cidr():
-
-    ip_lists = []
-    ip_range = open('googleip.txt')
-
-    for line in ip_range.readlines():
-        line = line.strip('\n')
-        if len(line) == 0 or line[0] == '#':
-            continue
-        begin, end = ip_utils.split_ip(line)
+def ip_range_to_cidr(ip_str_lists):
+    ip_cidr_network = []
+    ip_cidr_lists = []
+    for ip_str in ip_str_lists:
+        begin, end = ip_utils.split_ip(ip_str)
         cidrs = netaddr.iprange_to_cidrs(begin, end)
         for k, v in enumerate(cidrs):
             ip = v
-            ip_lists.append(ip)
-
-    fd = open('googleip.ip.txt', 'w')
-    for ip_cidr in ip_lists:
-        # print ip_cidr
-        fd.write(str(ip_cidr) + "\n")
-    fd.close()
-    print("\n    convert finished!\n")
+            ip_cidr_network.append(ip)
+    for ip_cidr in ip_cidr_network:
+        ip_cidr_lists.append(str(ip_cidr))
+    return ip_cidr_lists
 
 
 # convert_ip_tmpok(延时, 格式) 转换ip_tmpok.txt
@@ -343,13 +334,11 @@ def main():
 
  4. 整合 ip_range_origin.txt  中的IP段, 并生成 googleip.txt
 
- 5. 转换 googleip.txt 中的IP段为CIDR格式, 并生成 googleip.ip.txt
+ 5. 统计 googleip.txt 中的IP数量, 超过1KW自动分割
 
- 6. 统计 googleip.txt 中的IP数量, 超过1KW自动分割
+ 6. 同时执行4、5两条命令
 
- 7. 同时执行4、5、6三条命令
-
- 8. IP格式互转 GoAgent <==> GoProxy, 并生成 ip_output.txt
+ 7. IP格式互转 GoAgent <==> GoProxy, 并生成 ip_output.txt
 
     """
     )
@@ -368,14 +357,11 @@ def main():
     elif cmd == '4':
         generate_ip_range()
     elif cmd == '5':
-        googleip_to_cidr()
+        test_load()
     elif cmd == '6':
+        generate_ip_range()
         test_load()
     elif cmd == '7':
-        generate_ip_range()
-        googleip_to_cidr()
-        test_load()
-    elif cmd == '8':
         iplist = raw_input("""
 请输入需要转换的IP, 可使用右键->粘贴: 
 
