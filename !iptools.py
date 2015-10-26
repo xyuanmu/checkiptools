@@ -275,15 +275,22 @@ def ip_range_to_cidr(ip_str_lists):
     return ip_cidr_lists
 
 
-# convert_ip_tmpok(延时, 格式) 转换ip_tmpok.txt
+# convert_ip_tmpok(延时, 格式) 转换ip_tmpok.txt 并剔除重复IP
 def convert_ip_tmpok(timeout, format):
-    iplist = []
+    line_list = []
+    ip_list = []
+    new_line_list = []
     if os.path.exists('ip_tmpok.txt'):
         with open('ip_tmpok.txt') as ip_tmpok:
             for x in ip_tmpok:
                 sline = x.strip().split(' ')
-                iplist.append(sline)
                 if sline[1].startswith('NA_'): sline[1] = sline[1].lstrip('NA_')
+                line_list.append(sline)
+        line_list.sort(key=lambda x: int(x[1]))
+        for line in line_list:
+            if line[0] not in ip_list:
+                ip_list.append(line[0])
+                new_line_list.append(line)
         if format == 1:
             ip_out = 'ip_bind.txt'
         elif format == 2:
@@ -291,15 +298,13 @@ def convert_ip_tmpok(timeout, format):
         elif format == 3:
             ip_out = 'ip_xxnet.txt'
         with open(ip_out, 'w') as ip_output:
-            iplist.sort(key=lambda x: int(x[1]))
             if format == 1:
-                out = '|'.join(x[0] for x in iplist if int(x[1]) < timeout)
+                out = '|'.join(x[0] for x in new_line_list if int(x[1]) < timeout)
             elif format == 2:
-                out = '"'+'", "'.join(x[0] for x in iplist if int(x[1]) < timeout)+'"'
+                out = '"'+'", "'.join(x[0] for x in new_line_list if int(x[1]) < timeout)+'"'
             elif format == 3:
-                out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in iplist)
+                out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in new_line_list)
             print(out + '\n')
-            # print(iplist)
             ip_output.write(out)
     else:
         print "\n    doesn't exist ip_tmpok.txt\n"
