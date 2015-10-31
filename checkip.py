@@ -75,7 +75,7 @@ g_needsorttmpokfile = 1
 g_conntimeout = 5
 g_handshaketimeout = 7
 
-g_filedir = os.path.dirname(__file__)
+g_filedir = os.path.dirname(os.path.abspath(__file__))
 g_cacertfile = os.path.join(g_filedir, "cacert.pem")
 g_ipfile = os.path.join(g_filedir, "ip.txt")
 g_tmpnofile = os.path.join(g_filedir, "ip_tmpno.txt")
@@ -1072,13 +1072,14 @@ if __name__ == '__main__':
     else:
         files = os.listdir(g_filedir)
         i = 0
+        files.sort()
         for item in files:
             if "googleip-" in item:
                 i = re.findall(r'([0-9]+)',item)[0]
                 if os.path.exists("googleip-%s.txt" % i):
                     g_googleipfile = os.path.join(g_filedir,"googleip-%s.txt" % i)
                     evt_ipramdomend.clear()
-                    print "\n================================================================================\nbegin check googleip-%s.txt" % i
+                    print "\n", "="*80, "\nbegin check googleip-%s.txt" % i
                     list_ping()
                     if not os.path.exists(g_filedir + "/tmp"): os.mkdir("tmp")
                     if os.path.exists("ip_tmperror.txt"): os.rename("ip_tmperror.txt", "ip_tmperror-%s.txt" % i)
