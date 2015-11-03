@@ -18,6 +18,9 @@ import ip_utils
 # "xxx.xxx.xxx.xxx/xx"      （掩码格式）
 # "xxx.xxx.xxx.xxx"         （单个ip）
 
+# 文件所在目录
+filedir = os.path.dirname(os.path.abspath(__file__))
+
 # 包含原始IP段的文件
 input_good_range_lines = open("ip_range_origin.txt").read()
 
@@ -219,7 +222,7 @@ def test_ip_amount(ip_lists):
         num = test_ip_num(begin, end)
         amount += num
         print begin, end, num
-    print "amount ip:", amount, '\n'
+    print "amount ip: %s \n" % format(amount, ',')
     return amount
 
 
@@ -247,13 +250,13 @@ def test_load():
         #print begin, end, num
         filename = 'googleip-%03d.txt' % i
         if amount > i*ip_rip:
-            print "ip amount over %s" % (i*ip_rip)
+            print "ip amount over %s" % format(i*ip_rip, ',')
             ip_lists = ip_range_to_cidr(ip_lists)
             open(filename,'w').write('\n'.join(x for x in ip_lists))
             i += 1
             ip_lists = []
         elif amount == ip_amount:
-            print "ip amount below %s" % (i*ip_rip), '\n'
+            print "ip amount below %s" % format(i*ip_rip, ','), '\n'
             ip_lists = ip_range_to_cidr(ip_lists)
             if amount > ip_rip : open(filename,'w').write('\n'.join(x for x in ip_lists))
         continue
@@ -325,8 +328,28 @@ def convertip(iplist):
     fd.close()
 
 
+# 整合tmp目录下所有的可用IP
+def integrate_tmpok():
+    tmpdir = os.path.join(filedir, "tmp/")
+    files  = os.listdir(tmpdir)
+    ip_tmpok_lists = ""
+    files.sort()
+    for item in files:
+        if "ip_tmpok-" in item:
+            i = re.findall(r'([0-9]+)',item)[0]
+            ip_tmpok_lists += open("tmp/ip_tmpok-%s.txt" % i).read()
+    if ip_tmpok_lists == "":
+        print "\n    doesn't find any ip_tmpok in tmp/ \n"
+    else:
+        print ip_tmpok_lists
+        open("tmp/ip_all.txt", "w").write(ip_tmpok_lists)
+
+
 # 选项
 def main():
+    add_tmpok = "   "
+    if os.path.exists("tmp/"):
+        add_tmpok = u"8. 整合tmp目录下的可用IP到 ip_all.txt \n\n    ".encode("GBK")
     cmd = raw_input(
     u"""
 请选择需要处理的操作, 输入对应的数字并按下回车:
@@ -345,13 +368,11 @@ def main():
 
  7. IP格式互转 GoAgent <==> GoProxy, 并生成 ip_output.txt
 
-    """.encode("GBK")
+ """.encode("GBK") + add_tmpok
     )
     cmd = cmd.replace(" ","")
     if cmd == '1' or cmd == '2':
-        timeout = raw_input(u"""
-请输入延时（不用单位）, 默认2000毫秒: """.encode("GBK")
-        )
+        timeout = raw_input( u"""\n请输入延时（不用单位）, 默认2000毫秒: """.encode("GBK") )
         if timeout == '': timeout = 2000
         if cmd == '1':
             convert_ip_tmpok(int(timeout), 1)
@@ -367,12 +388,10 @@ def main():
         generate_ip_range()
         test_load()
     elif cmd == '7':
-        iplist = raw_input(u"""
-请输入需要转换的IP, 可使用右键->粘贴: 
-
-""".encode("GBK")
-        )
+        iplist = raw_input( u"""\n请输入需要转换的IP, 可使用右键->粘贴: \n""".encode("GBK") )
         convertip(iplist)
+    elif cmd == '8':
+        integrate_tmpok()
     else:
         main()
 

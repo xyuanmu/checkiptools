@@ -20,7 +20,12 @@ CheckIpTools
  * enjoy it!
 
 ## 工具预览：
-![checkiptools](https://cloud.githubusercontent.com/assets/12442896/10713780/47eb95ee-7b04-11e5-91b2-6093db29e97a.png)
+![checkiptools](https://cloud.githubusercontent.com/assets/12442896/10902255/0abb9258-8236-11e5-8ba1-191cc36b804e.png)
+
+## 20151103更新
+* IP段统一使用CIDR格式
+* 修复BUG：No such file or directory: ''
+* 增加整合tmp目录下的可用IP到 ip_all.txt
 
 ## 20151023更新
 * 更新IP分段命名规则为001、002
