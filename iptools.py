@@ -216,8 +216,6 @@ def test_ip_num(begin, end):
 def test_ip_amount(ip_lists):
     amount = 0
     for ip in ip_lists:
-        if len(ip) == 0 or ip[0] == '#':
-            continue
         begin, end = ip_utils.split_ip(ip)
         num = test_ip_num(begin, end)
         amount += num
@@ -235,19 +233,27 @@ def test_load():
     amount = 0
     ip_rip = 10000000    # 以1KW个IP分割IP段
     ip_lists = []
+    ip_range_list = []
 
-    ip_range_list = re.split("\r|\n", fd.read())
+    ip_range = re.split("\r|\n", fd.read())
+    for ip_line in ip_range:
+        if len(ip_line) == 0 or ip_line[0] == '#':
+            continue
+        ip_line = ip_line.replace(' ', '')
+        ips = ip_line.split("|")
+        for ip in ips:
+            if len(ip) == 0:
+                continue
+            ip_range_list.append(ip)
+
     ip_amount = test_ip_amount(ip_range_list)
 
     for line in ip_range_list:
-        if len(line) == 0 or line[0] == '#':
-            continue
         begin, end = ip_utils.split_ip(line)
         num = test_ip_num(begin, end)
         amount += num
         ip_lists.append(line)
 
-        #print begin, end, num
         filename = 'googleip-%03d.txt' % i
         if amount > i*ip_rip:
             print "ip amount over %s" % format(i*ip_rip, ',')
@@ -270,8 +276,7 @@ def ip_range_to_cidr(ip_str_lists):
     for ip_str in ip_str_lists:
         begin, end = ip_utils.split_ip(ip_str)
         cidrs = netaddr.iprange_to_cidrs(begin, end)
-        for k, v in enumerate(cidrs):
-            ip = v
+        for ip in cidrs:
             ip_cidr_network.append(ip)
     for ip_cidr in ip_cidr_network:
         ip_cidr_lists.append(str(ip_cidr))
@@ -286,8 +291,8 @@ def convert_ip_tmpok(timeout, format):
     if os.path.exists('ip_tmpok.txt'):
         with open('ip_tmpok.txt') as ip_tmpok:
             for x in ip_tmpok:
+                x = x.replace('NA_', '')
                 sline = x.strip().split(' ')
-                if sline[1].startswith('NA_'): sline[1] = sline[1].lstrip('NA_')
                 line_list.append(sline)
         line_list.sort(key=lambda x: int(x[1]))
         for line in line_list:
@@ -372,7 +377,7 @@ def main():
     )
     cmd = cmd.replace(" ","")
     if cmd == '1' or cmd == '2':
-        timeout = raw_input( """\n请输入延时（不用单位）, 默认2000毫秒: """ )
+        timeout = raw_input( "\n请输入延时（不用单位）, 默认2000毫秒: " )
         if timeout == '': timeout = 2000
         if cmd == '1':
             convert_ip_tmpok(int(timeout), 1)
@@ -388,7 +393,7 @@ def main():
         generate_ip_range()
         test_load()
     elif cmd == '7':
-        iplist = raw_input( """\n请输入需要转换的IP, 可使用右键->粘贴: \n""" )
+        iplist = raw_input( "\n请输入需要转换的IP, 可使用右键->粘贴: \n" )
         convertip(iplist)
     elif cmd == '8':
         integrate_tmpok()
