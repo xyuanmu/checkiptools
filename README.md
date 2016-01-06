@@ -9,7 +9,6 @@ CheckIpTools For Linux
 ## 下载地址
 * Windows：[CheckIpTools](https://github.com/xyuanmu/checkiptools/archive/master.zip)
 * Linux：[CheckIpTools For Linux](https://github.com/xyuanmu/checkiptools/archive/Linux.zip)
-* 因新版包含中文字符：[若乱码请下载1.0版](https://codeload.github.com/xyuanmu/checkiptools/zip/1.0)
 
 
 ## 目录文件说明：
@@ -36,12 +35,7 @@ CheckIpTools For Linux
 * 新增IP数量超过1KW时自动分割，生成 googleip-i.txt 命名的IP段文件
 * 优先扫描 googleip-i.txt 文件IP段，逐个扫描并将结果存到tmp文件夹，若无则扫描 googleip.txt
 
-## 20151018更新
-* 优化代码
-* 增加Linux系统版本，到这里下载：[CheckIpTools For Linux](https://github.com/xyuanmu/checkiptools/tree/Linux)
-
 ## 20151016更新
 * 增加工具选项，更直观
 * 增加导出 ip_tmpok.txt 为XX-Net格式，便于复制到 data/gae_proxy/good_ip.txt
 * 增加IP格式互转 GoAgent <==> GoProxy
-* **新版本包含中文字符，出现乱码[请下载1.0版](https://codeload.github.com/xyuanmu/checkiptools/zip/1.0)，[使用说明](https://github.com/xyuanmu/checkiptools/blob/1.0/README.md)。**
