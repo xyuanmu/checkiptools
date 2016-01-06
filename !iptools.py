@@ -118,6 +118,7 @@ def filter_ip_range(good_range, bad_range):
                     bad_begin, bad_end = bad_range[bad_i]
                     continue
                 else:
+                    out_good_range.append([good_begin, good_end])
                     break
             elif good_begin <= bad_begin and good_end <= bad_end:
                 # case:
@@ -148,6 +149,7 @@ def filter_ip_range(good_range, bad_range):
                     bad_begin, bad_end = bad_range[bad_i]
                     continue
                 else:
+                    out_good_range.append([bad_end + 1, good_end])
                     break
             elif good_begin <= bad_begin and good_end >= bad_end:
                 # case:
@@ -161,6 +163,7 @@ def filter_ip_range(good_range, bad_range):
                     bad_begin, bad_end = bad_range[bad_i]
                     continue
                 else:
+                    out_good_range.append([bad_end + 1, good_end])
                     break
             elif good_begin >= bad_begin and good_end <= bad_end:
                 # case:
@@ -315,7 +318,7 @@ def convert_ip_tmpok(timeout, format):
             print(out + '\n')
             ip_output.write(out)
     else:
-        print "\n    doesn't exist ip_tmpok.txt\n"
+        print "\n    ip_tmpok.txt doesn't exist\n"
 
 
 def convertip(iplist):
