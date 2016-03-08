@@ -12,21 +12,22 @@ import ip_utils
 # range seperater:
 # 每个范围可以用 半角逗号(,) 和竖线(|) 或分行进行分割
 #
-# Single rang format: (单个范围的格式)：
+# Single range format: (单个范围的格式)：
 # "xxx.xxx.xxx-xxx.xxx-xxx" （范围格式）
 # "xxx.xxx.xxx."            （前缀格式）
 # "xxx.xxx.xxx.xxx/xx"      （掩码格式）
 # "xxx.xxx.xxx.xxx"         （单个ip）
 
-# 文件所在目录
-filedir = os.path.dirname(os.path.abspath(__file__))
-
 # 包含原始IP段的文件
-input_good_range_lines = open("ip_range_origin.txt").read()
+ip_range_origin = "ip_range_origin.txt"
+input_good_range_lines = open(ip_range_origin).read()
 
 # 包含IP段黑名单的文件
-input_bad_ip_range_lines = open("ip_range_bad.txt").read()
+ip_range_bad = "ip_range_bad.txt"
+input_bad_ip_range_lines = open(ip_range_bad).read()
 
+# IP转换后输出的文件
+ip_output_file = "ip_output.txt"
 
 def print_range_list(ip_range_list):
     for ip_range in ip_range_list:
@@ -179,6 +180,8 @@ def filter_ip_range(good_range, bad_range):
 
 # 整合IP段去黑名单IP段并排序
 def generate_ip_range():
+    feature = raw_input( u"\nIP段格式: 1、x.x.x.x-x.x.x.x   2、x.x.x.x/xx ".encode("utf-8") )
+    if feature == '': feature = 1
     print("\nMerge Good ip range:")
     ip_range_list = parse_range_string(input_good_range_lines)
     ip_range_list = merge_range(ip_range_list)
@@ -196,8 +199,8 @@ def generate_ip_range():
         begin = ip_range[0]
         end = ip_range[1]
         ip_out_lists.append(ip_utils.ip_num_to_string(begin) + "-" + ip_utils.ip_num_to_string(end))
-    ip_out_lists = ip_range_to_cidr(ip_out_lists)
-    open('googleip.txt', 'w').write('\n'.join(x for x in ip_out_lists))
+    if int(feature) == 2: ip_out_lists = ip_range_to_cidr(ip_out_lists)
+    open('googleip.txt', 'w').write('\n'.join(x for x in ip_out_lists) + '\n')
 
 
 def test_ip_num(begin, end):
@@ -222,15 +225,15 @@ def test_ip_amount(ip_lists):
         begin, end = ip_utils.split_ip(ip)
         num = test_ip_num(begin, end)
         amount += num
-        print begin, end, num
+        #print begin, end, num
     print "amount ip: %s \n" % format(amount, ',')
     return amount
 
 
-# 统计IP数量，超过1KW自动分割
+# 统计IP数量，超过1KW提示分割
 def test_load():
     print("\nBegin test load googleip.txt")
-    fd = open("googleip.txt", "r")
+    fd = open('googleip.txt')
 
     i = 1
     amount = 0
@@ -248,8 +251,17 @@ def test_load():
             if len(ip) == 0:
                 continue
             ip_range_list.append(ip)
+    fd.close()
 
     ip_amount = test_ip_amount(ip_range_list)
+    if ip_amount > ip_rip:
+        rip = raw_input( u"IP数量超过%s，是否分割IP段: 1.是 2.否 ".encode("utf-8") % format(i*ip_rip, ',') )
+    else:
+        return
+    rip = rip.strip()
+    if rip == '2' or rip != '1':
+        print
+        return
 
     for line in ip_range_list:
         begin, end = ip_utils.split_ip(line)
@@ -261,15 +273,13 @@ def test_load():
         if amount > i*ip_rip:
             print "ip amount over %s" % format(i*ip_rip, ',')
             ip_lists = ip_range_to_cidr(ip_lists)
-            open(filename,'w').write('\n'.join(x for x in ip_lists))
+            open(filename,'w').write('\n'.join(x for x in ip_lists) + '\n')
             i += 1
             ip_lists = []
         elif amount == ip_amount:
             print "ip amount below %s" % format(i*ip_rip, ','), '\n'
             ip_lists = ip_range_to_cidr(ip_lists)
-            if amount > ip_rip : open(filename,'w').write('\n'.join(x for x in ip_lists))
-        continue
-    fd.close()
+            if amount > ip_rip : open(filename,'w').write('\n'.join(x for x in ip_lists) + '\n')
 
 
 # 转换IP范围，需要 netaddr，将IP转换为CIDR格式
@@ -286,44 +296,87 @@ def ip_range_to_cidr(ip_str_lists):
     return ip_cidr_lists
 
 
-# convert_ip_tmpok(延时, 格式) 转换ip_tmpok.txt 并剔除重复IP
-def convert_ip_tmpok(timeout, format):
+# convert_ip_tmpok(延时, 格式, 有效IP数) 转换/提取 ip_tmpok.txt
+def convert_ip_tmpok(timeout, format, good_ip_num=0):
+    with open('ip_tmpok.txt') as ip_tmpok:
+        new_line_list = sort_tmpok(ip_tmpok, format, timeout)
+    if format == 1:
+        out = '|'.join(x for x in new_line_list)
+        out+= '\n\n"'+'", "'.join(x for x in new_line_list)+'"'
+    elif format == 2:
+        new_ip_range = extract_ip(new_line_list, good_ip_num)
+        out = '\n'.join(x for x in new_ip_range) if new_ip_range else ''
+    elif format == 3:
+        out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in new_line_list)
+    if len(out) > 6:
+        print(out + "\n")
+        open(ip_output_file, 'w').write(out + '\n')
+    else:
+        print "\n    No enough ip! \n"
+
+
+# extract_ip(需要提取的IP数组, 有效IP数)
+def extract_ip(filter_ip, good_ip_num):
+    if len(filter_ip) < 1:
+        return False
+    ip_lists = []
+    ip_range = []
+    for ip in filter_ip:
+        ip = ip.split('.')
+        ip_lists.append(ip)
+    if good_ip_num == 1:
+        for ip in ip_lists:
+            ip = ip[0] + "." + ip[1] + "." + ip[2] + ".0/24"
+            ip_range.append(ip)
+    else:
+        i = d = 1
+        for ip in ip_lists:
+            if i == 1: last_ip = ip
+            if not i == 1:
+                if ip[0] == last_ip[0] and ip[1] == last_ip[1] and ip[2] == last_ip[2]:
+                    d += 1
+                    if d >= good_ip_num:
+                        ip = ip[0] + "." + ip[1] + "." + ip[2] + ".0/24"
+                        ip_range.append(ip)
+                        d = 1
+                else:
+                    last_ip = ip
+                    d = 1
+            i += 1
+    new_ip_range = list(set(ip_range))
+    new_ip_range.sort(key=ip_range.index)
+    #print new_ip_range
+    return new_ip_range
+
+
+# sort_tmpok(ip_tmpok文件内容, 格式, 延时) 对ip_tmpok文件内容进行整理和排序，并剔除重复IP
+def sort_tmpok(ip_tmpok, format, timeout=0):
     line_list = []
     ip_list = []
     new_line_list = []
-    if os.path.exists('ip_tmpok.txt'):
-        with open('ip_tmpok.txt') as ip_tmpok:
-            for x in ip_tmpok:
-                x = x.replace('NA_', '')
-                sline = x.strip().split(' ')
-                line_list.append(sline)
-        line_list.sort(key=lambda x: int(x[1]))
-        for line in line_list:
-            if line[0] not in ip_list:
-                ip_list.append(line[0])
-                new_line_list.append(line)
-        if format == 1:
-            ip_out = 'ip_bind.txt'
-        elif format == 2:
-            ip_out = 'ip_json.txt'
-        elif format == 3:
-            ip_out = 'ip_xxnet.txt'
-        with open(ip_out, 'w') as ip_output:
-            if format == 1:
-                out = '|'.join(x[0] for x in new_line_list if int(x[1]) < timeout)
-            elif format == 2:
-                out = '"'+'", "'.join(x[0] for x in new_line_list if int(x[1]) < timeout)+'"'
-            elif format == 3:
-                out = '\n'.join(x[0] + " " + x[2] + " gws " + x[1] + " 0" for x in new_line_list)
-            print(out + '\n')
-            ip_output.write(out)
+    for x in ip_tmpok:
+        x = x.replace('NA_', '')
+        sline = x.strip().split(' ')
+        line_list.append(sline)
+    if format == 2:   # 提取IP段使用IP来进行排序而不是延时
+        line_list.sort(key=lambda x: ( int(x[0].split('.')[0]), int(x[0].split('.')[1]), int(x[0].split('.')[2]), int(x[0].split('.')[3]) ))
     else:
-        print "\n    ip_tmpok.txt doesn't exist\n"
+        line_list.sort(key=lambda x: int(x[1]))
+    for line in line_list:
+        if line[0] not in ip_list:
+            ip_list.append(line[0])
+            if format == 3:   # 转换为XX-Net格式需要返回整行数组
+                new_line_list.append(line)
+            elif format == 4:   # 整合tmp文件夹的ip_tmpok文件需要返回整行内容
+                new_line_list.append(' '.join(x for x in line))
+            else:
+                if int(line[1]) < timeout: new_line_list.append(line[0])
+    return new_line_list
 
 
 def convertip(iplist):
     if iplist == "": return
-    fd = open('ip_output.txt', 'w')
+    fd = open(ip_output_file, 'w')
     iplist = iplist.replace(' ','')
     if '|' in iplist:
         out = '"' + iplist.replace('|', '", "') + '"'
@@ -338,56 +391,70 @@ def convertip(iplist):
 
 # 整合tmp目录下所有的可用IP
 def integrate_tmpok():
-    tmpdir = os.path.join(filedir, "tmp/")
+    tmpdir = "tmp/"
     files  = os.listdir(tmpdir)
-    ip_tmpok_lists = ""
     files.sort()
+    ip_tmpok_lists = []
     for item in files:
         if "ip_tmpok-" in item:
             i = re.findall(r'([0-9]+)',item)[0]
-            ip_tmpok_lists += open("tmp/ip_tmpok-%s.txt" % i).read()
-    if ip_tmpok_lists == "":
+            ip_tmpok_lists += open("tmp/ip_tmpok-%s.txt" % i).readlines()
+    if len(ip_tmpok_lists) < 3:
         print "\n    doesn't find any ip_tmpok in tmp/ \n"
     else:
-        print ip_tmpok_lists
-        open("tmp/ip_all.txt", "w").write(ip_tmpok_lists)
+        #print ip_tmpok_lists
+        try:
+            ip_tmpok_lists += open("ip_tmpok.txt").readlines()
+        except:
+            pass
+        out_lists = sort_tmpok(ip_tmpok_lists, 4)
+        output = '\n'.join(x for x in out_lists)
+        print output + "\n"
+        open("ip_tmpok.txt", "w").write(output + '\n')
 
 
 # 选项
 def main():
     add_tmpok = "   "
     if os.path.exists("tmp/"):
-        add_tmpok = "8. 整合tmp目录下的可用IP到 ip_all.txt \n\n    "
+        add_tmpok = u"8. 整合tmp目录下的可用IP到 ip_tmpok.txt \n\n    ".encode("utf-8")
     cmd = raw_input(
-    """
+    u"""
 请选择需要处理的操作, 输入对应的数字并按下回车:
 
- 1. 提取 ip_tmpok.txt 中的IP, 并生成 ip_bind.txt, 用｜分隔
+ 1. 提取 ip_tmpok.txt 中的IP, 用｜分隔以及 json 格式, 并生成 {0}
 
- 2. 提取 ip_tmpok.txt 中的IP, 并生成 ip_json.txt, json格式
+ 2. 提取 ip_tmpok.txt 中有效IP的IP段, 并生成 {0}
 
- 3. 转换 ip_tmpok.txt 中的IP, 为XX-Net格式, 并生成 ip_xxnet.txt
+ 3. 转换 ip_tmpok.txt 中的IP为 XX-Net 格式, 并生成 {0}
 
- 4. 整合 ip_range_origin.txt  中的IP段, 并生成 googleip.txt
+ 4. 整合 ip_range_origin.txt 中的IP段, 并生成 googleip.txt
 
- 5. 统计 googleip.txt 中的IP数量, 超过1KW自动分割
+ 5. 统计 googleip.txt 中的IP数量, 超过1KW提示分割
 
  6. 同时执行4、5两条命令
 
- 7. IP格式互转 GoAgent <==> GoProxy, 并生成 ip_output.txt
+ 7. IP格式互转 GoAgent <==> GoProxy, 并生成 {0}
 
- """ + add_tmpok
+ """.encode("utf-8").format(ip_output_file) + add_tmpok
     )
     cmd = cmd.replace(" ","")
-    if cmd == '1' or cmd == '2':
-        timeout = raw_input( "\n请输入延时（不用单位）, 默认2000毫秒: " )
+    if cmd == '1' or cmd == '2' or cmd == '3':
+        if not os.path.isfile('ip_tmpok.txt'):
+            print "\n    ip_tmpok.txt doesn't exist\n"
+            return
+    if cmd == '1':
+        timeout = raw_input( u"\n请输入IP延时（不用单位）, 默认2000毫秒: ".encode("utf-8") )
         if timeout == '': timeout = 2000
-        if cmd == '1':
-            convert_ip_tmpok(int(timeout), 1)
-        elif cmd == '2':
-            convert_ip_tmpok(int(timeout), 2)
+        convert_ip_tmpok(int(timeout), 1)
+    elif cmd == '2':
+        timeout = raw_input( u"\n提取IP的延时范围（不用单位）, 默认2000毫秒: ".encode("utf-8") )
+        if timeout == '': timeout = 2000
+        good_ip_num = raw_input( u"\n在/24范围内有效IP数, 输入1提取所有/24的IP段: ".encode("utf-8") )
+        if good_ip_num == '': good_ip_num = 1
+        convert_ip_tmpok(int(timeout), 2, int(good_ip_num))
     elif cmd == '3':
-        convert_ip_tmpok(0,3)
+        convert_ip_tmpok(0, 3)
     elif cmd == '4':
         generate_ip_range()
     elif cmd == '5':
@@ -396,7 +463,7 @@ def main():
         generate_ip_range()
         test_load()
     elif cmd == '7':
-        iplist = raw_input( "\n请输入需要转换的IP, 可使用右键->粘贴: \n" )
+        iplist = raw_input( u"\n请输入需要转换的IP, 可使用右键->粘贴: \n".encode("utf-8") )
         convertip(iplist)
     elif cmd == '8':
         integrate_tmpok()
@@ -405,3 +472,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

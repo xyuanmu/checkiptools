@@ -1071,9 +1071,11 @@ if __name__ == '__main__':
         checkip(sys.argv[1])
     else:
         files = os.listdir(g_filedir)
-        i = 0
         files.sort()
+        i = j = 0
+	n = len(files)
         for item in files:
+	    j += 1
             if "googleip-" in item:
                 i = re.findall(r'([0-9]+)',item)[0]
                 if os.path.exists("googleip-%s.txt" % i):
@@ -1089,5 +1091,5 @@ if __name__ == '__main__':
                     if os.path.exists("ip_tmpno-%s.txt" % i): move_over("ip_tmpno-%s.txt" % i, "tmp/")
                     if os.path.exists("ip_tmpok-%s.txt" % i): move_over("ip_tmpok-%s.txt" % i, "tmp/")
                     if os.path.exists("googleip-%s.txt" % i): os.remove("googleip-%s.txt" % i)
-            elif item == 'googleip.txt' and i == 0:
+            elif j == n and i == 0:
                 list_ping()
