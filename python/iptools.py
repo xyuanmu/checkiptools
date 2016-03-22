@@ -25,6 +25,8 @@ input_good_range_lines = open(ip_range_origin).read()
 # 包含IP段黑名单的文件
 ip_range_bad = "ip_range_bad.txt"
 input_bad_ip_range_lines = open(ip_range_bad).read()
+input_bad_ip_range_lines2 = "\n"# + open("ip_range_bad2.txt").read()
+input_bad_ip_range_lines = input_bad_ip_range_lines + input_bad_ip_range_lines2
 
 # IP转换后输出的文件
 ip_output_file = "ip_output.txt"
@@ -230,7 +232,7 @@ def test_ip_amount(ip_lists):
     return amount
 
 
-# 统计IP数量，超过1KW自动分割
+# 统计IP数量，超过1KW提示分割
 def test_load():
     print("\nBegin test load googleip.txt")
     fd = open('googleip.txt')
@@ -354,9 +356,18 @@ def sort_tmpok(ip_tmpok, format, timeout=0):
     line_list = []
     ip_list = []
     new_line_list = []
-    for x in ip_tmpok:
-        x = x.replace('NA_', '')
-        sline = x.strip().split(' ')
+    for line in ip_tmpok:
+        line = line.replace('NA_', '')
+        if '[INFO] Add' in line:
+            line = line.replace('time:', '')
+            line = line.replace('CN:', '')
+            nline = line.strip().split(' ')
+            sline = [nline[6], nline[7], nline[8], 'gws']
+        else:
+            sline = line.strip().split(' ')
+        if sline[3].isdigit():
+            sline[2] = sline[1]
+            sline[1] = sline[3]
         line_list.append(sline)
     if format == 2:   # 提取IP段使用IP来进行排序而不是延时
         line_list.sort(key=lambda x: ( int(x[0].split('.')[0]), int(x[0].split('.')[1]), int(x[0].split('.')[2]), int(x[0].split('.')[3]) ))
@@ -430,7 +441,7 @@ def main():
 
  4. 整合 ip_range_origin.txt 中的IP段, 并生成 googleip.txt
 
- 5. 统计 googleip.txt 中的IP数量, 超过1KW自动分割
+ 5. 统计 googleip.txt 中的IP数量, 超过1KW提示分割
 
  6. 同时执行4、5两条命令
 
