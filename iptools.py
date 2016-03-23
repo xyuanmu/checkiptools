@@ -365,9 +365,12 @@ def sort_tmpok(ip_tmpok, format, timeout=0):
             sline = [nline[6], nline[7], nline[8], 'gws']
         else:
             sline = line.strip().split(' ')
-        if sline[3].isdigit():
-            sline[2] = sline[1]
-            sline[1] = sline[3]
+        try:
+            if sline[3].isdigit():
+                sline[2] = sline[1]
+                sline[1] = sline[3]
+        except:
+            pass
         line_list.append(sline)
     if format == 2:   # 提取IP段使用IP来进行排序而不是延时
         line_list.sort(key=lambda x: ( int(x[0].split('.')[0]), int(x[0].split('.')[1]), int(x[0].split('.')[2]), int(x[0].split('.')[3]) ))
