@@ -31,6 +31,8 @@ def dig_ip(ip):
 
 
 def roll_ipfile():
+    if not os.path.isfile(dig_ipfile):
+        return
     for i in range(1000):
         file_name = dig_ipfile.split('.')[0] + ".%d" % i + ".txt"
         if os.path.isfile(file_name):
