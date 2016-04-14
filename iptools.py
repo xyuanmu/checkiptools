@@ -367,8 +367,7 @@ def sort_tmpok(ip_tmpok, format, timeout=0):
             sline = line.strip().split(' ')
         try:
             if sline[3].isdigit():
-                sline[2] = sline[1]
-                sline[1] = sline[3]
+                sline = [sline[0], sline[3], sline[1]]
         except:
             pass
         line_list.append(sline)

@@ -381,8 +381,20 @@ class TCacheResult(object):
             with open(g_tmpokfile,"r") as fd:
                 self.okfilelinecnt = 0
                 for line in fd:
+                    line = line.replace('NA_', '')
+                    if '[INFO] Add' in line:
+                        line = line.replace('time:', '')
+                        line = line.replace('CN:', '')
+                        nline = line.strip().split(' ')
+                        ips = [nline[6], nline[7], nline[8]]
+                    else:
+                        ips = line.strip().split(' ')
+                    try:
+                        if ips[3].isdigit():
+                            ips = [ips[0], ips[3], ips[1]]
+                    except:
+                        pass
                     self.okfilelinecnt += 1
-                    ips = line.strip("\r\n").split(" ")
                     if len(ips) < 3:
                         continue
                     gwsname = ""
@@ -942,8 +954,20 @@ def sort_tmpokfile(nLastOKFileLineCnt):
         ncurline = 0
         with open(g_tmpokfile,"r") as fd:
             for line in fd:
+                line = line.replace('NA_', '')
+                if '[INFO] Add' in line:
+                    line = line.replace('time:', '')
+                    line = line.replace('CN:', '')
+                    nline = line.strip().split(' ')
+                    ips = [nline[6], nline[7], nline[8]]
+                else:
+                    ips = line.strip().split(' ')
+                try:
+                    if ips[3].isdigit():
+                        ips = [ips[0], ips[3], ips[1]]
+                except:
+                    pass
                 ncurline += 1
-                ips = line.strip("\r\n").split(" ")
                 if len(ips) < 3:
                     continue
                 ipint = from_string(ips[0])
