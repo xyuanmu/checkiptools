@@ -1,5 +1,5 @@
 
-import socket, struct, time, string, base64, math, shutil
+import socket, struct, time, string, base64, math
 
 from .options import options
 from .common import *
@@ -61,17 +61,8 @@ class DNSresponse:
                 lines = fd.readlines()
                 line_num = len(lines)
             if line_num >= self.max_lines_per_log_file:
-                self.roll_log()
+                roll_file(self.log_file)
         self.log_fd = open(self.log_file, "a")
-
-    def roll_log(self):
-        for i in range(1000):
-            file_name = self.log_file.split('.')[0] + ".%d" % i + ".log"
-            if os.path.isfile(file_name):
-                continue
-            print(";; DNSresponse roll %s -> %s" % (self.log_file, file_name))
-            shutil.move(self.log_file, file_name)
-            return
 
     def decode_header(self, pkt, sent_id, checkid=True):
         """Decode a DNS protocol header"""

@@ -1,10 +1,10 @@
 
-import os, sys
+import os, sys, shutil
 
 PROGNAME       = os.path.basename(sys.argv[0])
 PROGDESC       = "a DNS query tool written in Python"
 VERSION        = "1.3.0"
-LOGFILE        = "dig_log.log"
+LOGFILE        = "dig_log.txt"
 
 PYVERSION      = sys.version_info.major
 RESOLV_CONF    = "/etc/resolv.conf"    # where to find default server
@@ -112,3 +112,15 @@ class Counter:
         self.total += val
     def average(self):
         return (1.0 * self.total)/self.count
+
+
+def roll_file(filename):
+    if not os.path.isfile(filename):
+        return
+    for i in range(1000):
+        file_name = filename.split('.')[0] + ".%d" % i + ".txt"
+        if os.path.isfile(file_name):
+            continue
+        print("roll %s -> %s" % (filename, file_name))
+        shutil.move(filename, file_name)
+        return
