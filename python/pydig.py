@@ -4,7 +4,8 @@
 import sys
 sys.dont_write_bytecode = True
 
-import os, re, urllib, time
+import os, re, time
+from urllib2 import Request, urlopen
 from pydiglib.main import main as pydig
 from pydiglib.common import LOGFILE, roll_file
 from ip_utils import check_ip_valid
@@ -23,6 +24,7 @@ dig_iprange = 'dig_range.txt'
 #pydig结束后整理的IP段到 googleip.txt
 #dig_sort_range = 1
 
+HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0'}
 
 def dig_ip(ip):
     if not check_ip_valid(ip):
@@ -60,12 +62,14 @@ def get_ip_from_url(url, filename=dig_ipfile):
         url = 'http://' + url
     try:
         print('download url page: %s' % url)
-        html = urllib.urlopen(url).read()
+        req = Request(url, headers=HEADER)
+        html = urlopen(req, timeout=5).read()
     except:
         print('download url page: %s fail, try again.' % url)
         time.sleep(2)
         try:
-            html = urllib.urlopen(url).read()
+            req = Request(url, headers=HEADER)
+            html = urlopen(req, timeout=5).read()
         except:
             print('download url page: %s fail!' % url)
             return ips
