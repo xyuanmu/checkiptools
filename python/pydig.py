@@ -4,11 +4,12 @@
 import sys
 sys.dont_write_bytecode = True
 
-import os, re, time
+import os, re, time, threading
 from urllib2 import Request, urlopen
-from pydiglib.main import main as pydig
-from pydiglib.common import LOGFILE, roll_file
+from pydig.main import main as pydig
+from pydig.common import LOGFILE, roll_file
 from ip_utils import check_ip_valid
+from iptools import generate_ip_range
 
 
 #默认IP，当IP被判定为无效时使用此IP代替
@@ -19,20 +20,31 @@ dig_urlfile = 'dig_url.txt'
 dig_ipfile = 'dig_ip.txt'
 #pydig日志文件，别修改
 dig_logfile = LOGFILE
+#pydig失败的IP文件
+dig_error = 'dig_tmperror.txt'
+#pydig成功的IP文件
+dig_finished = 'dig_tmpfinished.txt'
 #pydig结束后整理的IP段文件
 dig_iprange = 'dig_range.txt'
-#pydig结束后整理的IP段到 googleip.txt
-#dig_sort_range = 1
+#pydig结束后重新dig一次dig_error中的IP
+dig_redig_error = 0
+#pydig结束后整合IP段到 googleip.txt
+dig_sort_range = 0
 
 HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0'}
+
 
 def dig_ip(ip):
     if not check_ip_valid(ip):
         print('ip: %s is invalid, reset to default ip: %s' % (ip, default_ip))
         ip = default_ip
     print('\ndig ip: %s' % ip)
-    cmd = ['', '+subnet=%s/32' % ip, '@ns1.google.com', 'www.google.com']
-    pydig(cmd)
+    cmd = ['1', '+subnet=%s/32' % ip, '@ns1.google.com', 'www.google.com']
+    code = pydig(cmd)
+    if code == 502:
+        open(dig_error, "a").write(ip + "\n")
+    else:
+        open(dig_finished, "a").write(ip + "\n")
 
 
 def load_ip(filename):
@@ -110,7 +122,7 @@ def get_ip_range(filename, old_list=[]):
 
 
 def main():
-    ip = ips = ''
+    ip = ips = finishedip = ''
     if os.path.isfile(dig_urlfile):
         ips = load_url(dig_urlfile)
         roll_file(dig_urlfile)
@@ -122,18 +134,41 @@ def main():
         ip = text
         if 'www' in text:
             ips = get_ip_from_url(url)
+
+    if os.path.isfile(dig_finished):
+        finishedip = load_ip(dig_finished)
     if ips:
         for ip in ips:
+            if finishedip and ip in finishedip:
+                continue
             dig_ip(ip)
     elif ip:
         dig_ip(ip)
     else:
         main()
+
+    if dig_redig_error and os.path.isfile(dig_error):
+        print '\nredig ip from %s' % dig_error
+        errorip = load_ip(dig_error)
+        errorip = list(set(errorip))
+        for ip in errorip:
+            if finishedip and ip in finishedip:
+                continue
+            dig_ip(ip)
+        roll_file(dig_error)
+
     old_list = load_ip_range(dig_iprange)
     ip_range = get_ip_range(dig_logfile, old_list)
     output = '\n'.join(x for x in ip_range) + '\n'
     open(dig_iprange, 'w').write(output)
     roll_file(dig_ipfile)
+    print 'dig finished!'
+
+    if dig_sort_range:
+        print 'begin sort ip and merge into googleip.txt'
+        good_range = open('googleip.txt').read()
+        good_range += open(dig_iprange).read()
+        generate_ip_range(2, good_range)
 
 
 if __name__ == '__main__':
