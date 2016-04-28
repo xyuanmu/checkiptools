@@ -133,25 +133,30 @@ class DIG():
         self.dig_ipdict = []
 
     def dig_ip_worker(self):
-        for ip in self.dig_ips:
-            if len(self.dig_ipdict) == len(self.dig_ips):
-                break
-            if ip in self.dig_ipdict or ip in self.dig_finishedip:
-                continue
-            self.dig_ipdict.append(ip)
-            if not check_ip_valid(ip):
-                print('ip: %s is invalid, reset to default ip: %s' % (ip, default_ip))
-                ip = default_ip
-            print('\ndig ip: %s' % ip)
-            cmd = ['1', '+subnet=%s/32' % ip, '@ns1.google.com', 'www.google.com']
-            code = pydig(cmd)
+        try:
+            for ip in self.dig_ips:
+                if ip in self.dig_ipdict or ip in self.dig_finishedip:
+                    continue
+                self.dig_ipdict.append(ip)
+                if not check_ip_valid(ip):
+                    print('ip: %s is invalid, reset to default ip: %s' % (ip, default_ip))
+                    ip = default_ip
+                print('\ndig ip: %s' % ip)
+                cmd = ['1', '+subnet=%s/32' % ip, '@ns1.google.com', 'www.google.com']
+                code = pydig(cmd)
+                self.dig_lock.acquire()
+                if code == 502:
+                    open(dig_error, "a").write(ip + "\n")
+                else:
+                    open(dig_finished, "a").write(ip + "\n")
+                self.dig_lock.release()
+        except:
+            pass
+        finally:
             self.dig_lock.acquire()
-            if code == 502:
-                open(dig_error, "a").write(ip + "\n")
-            else:
-                open(dig_finished, "a").write(ip + "\n")
+            print 'dig_ip_worker exit'
+            self.dig_thread_num -= 1
             self.dig_lock.release()
-        print 'dig_ip_worker exit'
 
     def start_dig(self):
         new_thread_num = self.dig_max_thread_num - self.dig_thread_num
@@ -167,6 +172,8 @@ class DIG():
             d = threading.Thread(target = self.dig_ip_worker)
             d.start()
             time.sleep(0.5)
+        while self.dig_thread_num > 5:
+            time.sleep(5)
 
 
 def main():
