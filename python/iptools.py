@@ -181,11 +181,15 @@ def filter_ip_range(good_range, bad_range):
 
 
 # 整合IP段去黑名单IP段并排序
-def generate_ip_range():
-    feature = raw_input( u"\nIP段格式: 1、x.x.x.x-x.x.x.x   2、x.x.x.x/xx ".encode("GBK") )
+def generate_ip_range(feature='', good_range=None):
+    if not feature:
+        feature = raw_input( u"\nIP段格式: 1、x.x.x.x-x.x.x.x   2、x.x.x.x/xx ".encode("GBK") )
     if feature == '': feature = 1
     print("\nMerge Good ip range:")
-    ip_range_list = parse_range_string(input_good_range_lines)
+    if good_range:
+        ip_range_list = parse_range_string(good_range)
+    else:
+        ip_range_list = parse_range_string(input_good_range_lines)
     ip_range_list = merge_range(ip_range_list)
 
     print("\nMerge Bad ip range:")
@@ -210,6 +214,8 @@ def test_ip_num(begin, end):
     ip_end_str   = end.strip().split('.')
 
     if ip_begin_str[3] == '0':    ip_begin_str[3] = '1'
+    if ip_begin_str[3] == '255':  ip_begin_str[3] = '254'
+    if ip_end_str[3] == '0':      ip_end_str[3] = '1'
     if ip_end_str[3] == '255':    ip_end_str[3] = '254'
 
     str_1 = (int(ip_end_str[0]) - int(ip_begin_str[0])) * 16646144
