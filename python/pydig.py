@@ -26,8 +26,10 @@ dig_error = 'dig_tmperror.txt'
 dig_finished = 'dig_tmpfinished.txt'
 #pydig结束后整理的IP段文件
 dig_iprange = 'dig_range.txt'
+#pydig最大线程数
+dig_max_threads = 50
 #pydig结束后重新dig一次dig_error中的IP
-dig_redig_error = 0
+dig_redig_error = 1
 #pydig结束后整合IP段到 googleip.txt
 dig_sort_range = 0
 
@@ -121,8 +123,53 @@ def get_ip_range(filename, old_list=[]):
     return ip_range
 
 
+class DIG():
+    def __init__(self, ips, finishedip, max_thread_num):
+        self.dig_lock = threading.Lock()
+        self.dig_ips = ips
+        self.dig_finishedip = finishedip
+        self.dig_max_thread_num = max_thread_num
+        self.dig_thread_num = 0
+        self.dig_ipdict = []
+
+    def dig_ip_worker(self):
+        for ip in self.dig_ips:
+            if len(self.dig_ipdict) == len(self.dig_ips):
+                break
+            if ip in self.dig_ipdict or ip in self.dig_finishedip:
+                continue
+            self.dig_ipdict.append(ip)
+            if not check_ip_valid(ip):
+                print('ip: %s is invalid, reset to default ip: %s' % (ip, default_ip))
+                ip = default_ip
+            print('\ndig ip: %s' % ip)
+            cmd = ['1', '+subnet=%s/32' % ip, '@ns1.google.com', 'www.google.com']
+            code = pydig(cmd)
+            self.dig_lock.acquire()
+            if code == 502:
+                open(dig_error, "a").write(ip + "\n")
+            else:
+                open(dig_finished, "a").write(ip + "\n")
+            self.dig_lock.release()
+        print 'dig_ip_worker exit'
+
+    def start_dig(self):
+        new_thread_num = self.dig_max_thread_num - self.dig_thread_num
+        if new_thread_num < 1:
+            return
+        for i in range(0, new_thread_num):
+            self.dig_lock.acquire()
+            self.dig_thread_num += 1
+            self.dig_lock.release()
+            d = threading.Thread(target = self.dig_ip_worker)
+            d.start()
+            time.sleep(0.5)
+
+
 def main():
-    ip = ips = finishedip = ''
+    ip = ''
+    ips = []
+    finishedip = []
     if os.path.isfile(dig_urlfile):
         ips = load_url(dig_urlfile)
         roll_file(dig_urlfile)
@@ -138,10 +185,8 @@ def main():
     if os.path.isfile(dig_finished):
         finishedip = load_ip(dig_finished)
     if ips:
-        for ip in ips:
-            if finishedip and ip in finishedip:
-                continue
-            dig_ip(ip)
+        dig = DIG(ips, finishedip, dig_max_threads)
+        dig.start_dig()
     elif ip:
         dig_ip(ip)
     else:
@@ -151,11 +196,9 @@ def main():
         print '\nredig ip from %s' % dig_error
         errorip = load_ip(dig_error)
         errorip = list(set(errorip))
-        for ip in errorip:
-            if finishedip and ip in finishedip:
-                continue
-            dig_ip(ip)
         roll_file(dig_error)
+        dig = DIG(errorip, finishedip, dig_max_threads)
+        dig.start_dig()
 
     old_list = load_ip_range(dig_iprange)
     ip_range = get_ip_range(dig_logfile, old_list)
