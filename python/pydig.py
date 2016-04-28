@@ -157,6 +157,9 @@ class DIG():
         new_thread_num = self.dig_max_thread_num - self.dig_thread_num
         if new_thread_num < 1:
             return
+        ip_num = len(self.dig_ips)
+        if new_thread_num > ip_num:
+            new_thread_num = ip_num
         for i in range(0, new_thread_num):
             self.dig_lock.acquire()
             self.dig_thread_num += 1
