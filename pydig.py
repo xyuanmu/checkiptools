@@ -29,7 +29,7 @@ dig_iprange = 'dig_range.txt'
 #pydig最大线程数
 dig_max_threads = 50
 #pydig结束后重新dig一次dig_error中的IP
-dig_redig_error = 1
+dig_redig_error = 0
 #pydig结束后整合IP段到 googleip.txt
 dig_sort_range = 0
 
@@ -180,7 +180,7 @@ def main():
         text = text.strip()
         ip = text
         if 'www' in text:
-            ips = get_ip_from_url(url)
+            ips = get_ip_from_url(text)
 
     if os.path.isfile(dig_finished):
         finishedip = load_ip(dig_finished)
