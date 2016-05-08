@@ -37,6 +37,11 @@ dig_sort_range = 0
 
 HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:43.0) Gecko/20100101 Firefox/43.0'}
 
+if os.name == "nt":
+    coding = "GBK"
+else:
+    coding = "utf-8"
+
 
 def dig_ip(ip):
     if not check_ip_valid(ip):
@@ -188,7 +193,7 @@ def main():
     elif os.path.isfile(dig_ipfile):
         ips = load_ip(dig_ipfile)
     else:
-        text = raw_input(u'\n请输入网址或IP：'.encode('GBK'))
+        text = raw_input(u'\n请输入网址或IP：'.encode(coding))
         text = text.strip()
         ip = text
         if 'www' in text:

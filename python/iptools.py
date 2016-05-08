@@ -31,6 +31,11 @@ input_bad_ip_range_lines = input_bad_ip_range_lines + input_bad_ip_range_lines2
 # IP转换后输出的文件
 ip_output_file = "ip_output.txt"
 
+if os.name == "nt":
+    coding = "GBK"
+else:
+    coding = "utf-8"
+
 def print_range_list(ip_range_list):
     for ip_range in ip_range_list:
         begin = ip_range[0]
@@ -183,7 +188,7 @@ def filter_ip_range(good_range, bad_range):
 # 整合IP段去黑名单IP段并排序
 def generate_ip_range(feature='', good_range=None):
     if not feature:
-        feature = raw_input( u"\nIP段格式: 1、x.x.x.x-x.x.x.x   2、x.x.x.x/xx ".encode("GBK") )
+        feature = raw_input( u"\nIP段格式: 1、x.x.x.x-x.x.x.x   2、x.x.x.x/xx ".encode(coding) )
     if feature == '': feature = 1
     print("\nMerge Good ip range:")
     if good_range:
@@ -263,7 +268,7 @@ def test_load():
 
     ip_amount = test_ip_amount(ip_range_list)
     if ip_amount > ip_rip:
-        rip = raw_input( u"IP数量超过%s，是否分割IP段: 1.是 2.否 ".encode("GBK") % format(i*ip_rip, ',') )
+        rip = raw_input( u"IP数量超过%s，是否分割IP段: 1.是 2.否 ".encode(coding) % format(i*ip_rip, ',') )
     else:
         return
     rip = rip.strip()
@@ -436,7 +441,7 @@ def integrate_tmpok():
 def main():
     add_tmpok = "   "
     if os.path.exists("tmp/"):
-        add_tmpok = u"8. 整合tmp目录下的可用IP到 ip_tmpok.txt \n\n    ".encode("GBK")
+        add_tmpok = u"8. 整合tmp目录下的可用IP到 ip_tmpok.txt \n\n    ".encode(coding)
     cmd = raw_input(
     u"""
 请选择需要处理的操作, 输入对应的数字并按下回车:
@@ -455,7 +460,7 @@ def main():
 
  7. IP格式互转 GoAgent <==> GoProxy, 并生成 {0}
 
- """.encode("GBK").format(ip_output_file) + add_tmpok
+ """.encode(coding).format(ip_output_file) + add_tmpok
     )
     cmd = cmd.replace(" ","")
     if cmd == '1' or cmd == '2' or cmd == '3':
@@ -463,13 +468,13 @@ def main():
             print "\n    ip_tmpok.txt doesn't exist\n"
             return
     if cmd == '1':
-        timeout = raw_input( u"\n请输入IP延时（不用单位）, 默认2000毫秒: ".encode("GBK") )
+        timeout = raw_input( u"\n请输入IP延时（不用单位）, 默认2000毫秒: ".encode(coding) )
         if timeout == '': timeout = 2000
         convert_ip_tmpok(int(timeout), 1)
     elif cmd == '2':
-        timeout = raw_input( u"\n提取IP的延时范围（不用单位）, 默认2000毫秒: ".encode("GBK") )
+        timeout = raw_input( u"\n提取IP的延时范围（不用单位）, 默认2000毫秒: ".encode(coding) )
         if timeout == '': timeout = 2000
-        good_ip_num = raw_input( u"\n在/24范围内有效IP数, 输入1提取所有/24的IP段: ".encode("GBK") )
+        good_ip_num = raw_input( u"\n在/24范围内有效IP数, 输入1提取所有/24的IP段: ".encode(coding) )
         if good_ip_num == '': good_ip_num = 1
         convert_ip_tmpok(int(timeout), 2, int(good_ip_num))
     elif cmd == '3':
@@ -482,7 +487,7 @@ def main():
         generate_ip_range()
         test_load()
     elif cmd == '7':
-        iplist = raw_input( u"\n请输入需要转换的IP, 可使用右键->粘贴: \n".encode("GBK") )
+        iplist = raw_input( u"\n请输入需要转换的IP, 可使用右键->粘贴: \n".encode(coding) )
         convertip(iplist)
     elif cmd == '8':
         integrate_tmpok()
