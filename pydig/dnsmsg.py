@@ -45,7 +45,6 @@ class DNSresponse:
 
     def __init__(self, family, query, requestpkt, pkt, 
                  sent_id, used_tcp=False,  checkid=True):
-        self.max_lines_per_log_file = 6000
         self.family = family
         self.query = query
         self.requestpkt = requestpkt
@@ -53,16 +52,6 @@ class DNSresponse:
         self.used_tcp = used_tcp
         self.decode_header(pkt, sent_id, checkid)
         self.log_file = LOGFILE
-        self.open_log()
-
-    def open_log(self):
-        if os.path.isfile(self.log_file):
-            with open(self.log_file, "r") as fd:
-                lines = fd.readlines()
-                line_num = len(lines)
-            if line_num >= self.max_lines_per_log_file:
-                roll_file(self.log_file)
-        self.log_fd = open(self.log_file, "a")
 
     def decode_header(self, pkt, sent_id, checkid=True):
         """Decode a DNS protocol header"""
@@ -130,7 +119,7 @@ class DNSresponse:
               (pdomainname(rrname), ttl,
                qc.get_name(rrclass), qt.get_name(rrtype), rdata))
         if l == 1:
-            self.log_fd.write("%s\t%d\t%s\t%s\t%s\n" %
+            open(self.log_file, "a").write("%s\t%d\t%s\t%s\t%s\n" %
                   (pdomainname(rrname), ttl,
                    qc.get_name(rrclass), qt.get_name(rrtype), rdata))
         return
