@@ -20,6 +20,8 @@ dig_urlfile = 'dig_url.txt'
 dig_ipfile = 'dig_ip.txt'
 #pydig日志文件，别修改
 dig_logfile = LOGFILE
+#pydig日志最大行数
+dig_loglength = 6000
 #pydig失败的IP文件
 dig_error = 'dig_tmperror.txt'
 #pydig成功的IP文件
@@ -171,7 +173,7 @@ class DIG():
             self.dig_lock.release()
             d = threading.Thread(target = self.dig_ip_worker)
             d.start()
-            time.sleep(0.5)
+            time.sleep(0.1)
         while self.dig_thread_num > 5:
             time.sleep(5)
 
@@ -194,6 +196,14 @@ def main():
 
     if os.path.isfile(dig_finished):
         finishedip = load_ip(dig_finished)
+
+    if os.path.isfile(dig_logfile):
+        with open(dig_logfile, "r") as fd:
+            lines = fd.readlines()
+            line_num = len(lines)
+        if line_num >= dig_loglength:
+            roll_file(dig_logfile)
+
     if ips:
         dig = DIG(ips, finishedip, dig_max_threads)
         dig.start_dig()
