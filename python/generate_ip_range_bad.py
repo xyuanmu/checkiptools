@@ -138,4 +138,4 @@ def test_ip_amount(file_name,ip_lists):
 if __name__ == "__main__":
     generate_ip_range(1)
     # 包含香港澳门的IP黑名单
-    generate_ip_range(2)
+    # generate_ip_range(2)
