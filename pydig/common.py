@@ -1,10 +1,17 @@
 
 import os, sys, shutil
+filedir = os.path.dirname(os.path.abspath(__file__))
+echodir = os.path.abspath(os.path.join(filedir, os.path.pardir))
+if os.name == "nt":
+    echodir = os.path.abspath(os.path.join(echodir, os.path.pardir, os.path.pardir))
+tmpdir = os.path.join(echodir, "tmp")
+if not os.path.exists(tmpdir):
+    os.mkdir(tmpdir)
 
 PROGNAME       = os.path.basename(sys.argv[0])
 PROGDESC       = "a DNS query tool written in Python"
 VERSION        = "1.3.0"
-LOGFILE        = "dig_log.txt"
+LOGFILE        = os.path.join(tmpdir, "dig_log.txt")
 
 PYVERSION      = sys.version_info.major
 RESOLV_CONF    = "/etc/resolv.conf"    # where to find default server
@@ -114,13 +121,15 @@ class Counter:
         return (1.0 * self.total)/self.count
 
 
-def roll_file(filename):
-    if not os.path.isfile(filename):
+def roll_file(file):
+    if not os.path.isfile(file):
         return
+    filename = file.split(os.sep)[-1]
     for i in range(1000):
-        file_name = filename.split('.')[0] + ".%d" % i + ".txt"
+        filename = filename.split('.')[0] + ".%d" % i + ".txt"
+        file_name = os.path.join(tmpdir, filename)
         if os.path.isfile(file_name):
             continue
-        print("roll %s -> %s" % (filename, file_name))
-        shutil.move(filename, file_name)
+        print("roll %s -> %s" % (file, filename))
+        shutil.move(file, file_name)
         return

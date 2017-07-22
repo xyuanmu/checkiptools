@@ -35,7 +35,7 @@ else:
     from Queue import Queue, Empty
 import time
 from time import sleep
- 
+
 g_useOpenSSL = 1
 g_usegevent = 1
 if g_usegevent == 1:
@@ -58,7 +58,7 @@ if g_useOpenSSL == 1:
         SSLError = ssl.SSLError
 else:
     SSLError = ssl.SSLError
-    
+
 
 #最大IP延时，单位毫秒
 g_maxhandletimeout = 600
@@ -77,22 +77,30 @@ g_handshaketimeout = 7
 
 g_filedir = os.path.dirname(os.path.abspath(__file__))
 g_cacertfile = os.path.join(g_filedir, "cacert.pem")
-g_ipfile = os.path.join(g_filedir, "ip.txt")
-g_tmpnofile = os.path.join(g_filedir, "ip_tmpno.txt")
-g_tmpokfile = os.path.join(g_filedir, "ip_tmpok.txt")
-g_tmperrorfile = os.path.join(g_filedir, "ip_tmperror.txt")
-g_googleipfile = os.path.join(g_filedir,"googleip.txt")
+if os.name == "nt":
+    g_pardir = os.path.abspath(os.path.join(g_filedir, os.path.pardir))
+else:
+    g_pardir = g_filedir
+g_tmpdir = os.path.join(g_pardir, "tmp")
+#建立缓存文件夹
+if not os.path.exists(g_tmpdir):
+    os.mkdir(g_tmpdir)
+g_ipfile = os.path.join(g_pardir, "ip.txt")
+g_tmpokfile = os.path.join(g_pardir, "ip_tmpok.txt")
+g_tmpnofile = os.path.join(g_tmpdir, "ip_tmpno.txt")
+g_tmperrorfile = os.path.join(g_tmpdir, "ip_tmperror.txt")
+g_googleipfile = os.path.join(g_pardir, "googleip.txt")
 
 
 # gevent socket cnt must less than 1024
 if g_usegevent == 1 and g_maxthreads > 1000:
     g_maxthreads = 128
 
-g_ssldomain = ("google.com","*.googlevideo.com")
+g_ssldomain = ("google.com","*.googlevideo.com","*.c.docs.google.com")
 g_excludessdomain=()
 #检查组织是否为google，如果有其他名称，需要添加，暂时只发现一个
 g_organizationName = ("Google Inc",)
-g_blackiplist = ("216.58.",)
+g_blackiplist = ("216.255.",)
 
 
 "是否自动删除记录查询成功的非google的IP文件，方便下次跳过连接，0为不删除，1为删除"
@@ -101,17 +109,17 @@ g_autodeltmpnofile = 0
 "是否自动删除记录查询失败的IP文件，0为不删除，1为删除"
 "ip_tmperror.txt，格式：ip"
 g_autodeltmperrorfile = 0
-    
+
 if g_usegevent == 1:
     # Re-add sslwrap to Python 2.7.9
     import inspect
     __ssl__ = __import__('ssl')
-    
+
     try:
         _ssl = __ssl__._ssl
     except AttributeError:
         _ssl = __ssl__._ssl2
-        
+
     def new_sslwrap(sock, server_side=False, keyfile=None, certfile=None, cert_reqs=__ssl__.CERT_NONE, ssl_version=__ssl__.PROTOCOL_SSLv23, ca_certs=None, ciphers=None):
         context = __ssl__.SSLContext(ssl_version)
         context.verify_mode = cert_reqs or __ssl__.CERT_NONE
@@ -121,10 +129,10 @@ if g_usegevent == 1:
             context.load_cert_chain(certfile, keyfile)
         if ciphers:
             context.set_ciphers(ciphers)
-            
+
         caller_self = inspect.currentframe().f_back.f_locals['self']
         return context._wrap_socket(sock, server_side=server_side, ssl_sock=caller_self)
-    
+
     if not hasattr(_ssl, 'sslwrap'):
         _ssl.sslwrap = new_sslwrap
 
@@ -246,7 +254,7 @@ evt_ipramdomend = threading.Event()
 
 def PRINT(strlog):
     logging.info(strlog)
-    
+
 def isgoolgledomain(domain):
     lowerdomain = domain.lower()
     if lowerdomain in g_ssldomain:
@@ -278,7 +286,7 @@ def checkvalidssldomain(domain,svrname):
 prekey="\nServer:"
 def getgooglesvrnamefromheader(header):
     begin = header.find(prekey)
-    if begin != -1: 
+    if begin != -1:
         begin += len(prekey)
         end = header.find("\n",begin)
         if end == -1:
@@ -307,7 +315,7 @@ class TCacheResult(object):
         self.validipcnt = 0
         self.filegwsipset = set()
         self.okfilelinecnt = 0
-    
+
     def addOKIP(self,costtime,ip,ssldomain,gwsname):
         bOK = False
         try:
@@ -334,7 +342,7 @@ class TCacheResult(object):
                 return bOK,0
         finally:
             self.oklock.release()
-            
+
     def addFailIP(self,ip):
         try:
             self.errlock.acquire()
@@ -348,8 +356,8 @@ class TCacheResult(object):
             if len(self.failiplist) > 128:
                 self.flushFailIP()
         finally:
-            self.errlock.release() 
-    
+            self.errlock.release()
+
     def close(self):
         def closefile(fileobj):
             if fileobj:
@@ -358,10 +366,10 @@ class TCacheResult(object):
         closefile(self.okfile)
         closefile(self.notfile)
         closefile(self.errorfile)
-       
+
     def getIPResult(self):
         return self.oklist
-    
+
     def flushFailIP(self):
         nLen = len(self.failiplist)
         if nLen > 0 :
@@ -415,7 +423,7 @@ class TCacheResult(object):
                     for item in ips:
                         errorresult.add(from_string(item))
         return okresult,errorresult
-    
+
     def clearFile(self):
         self.close()
         if g_autodeltmpnofile and os.path.exists(g_tmpnofile):
@@ -424,7 +432,7 @@ class TCacheResult(object):
         if g_autodeltmperrorfile and os.path.exists(g_tmperrorfile):
             os.remove(g_tmperrorfile)
             PRINT("remove file %s" % g_tmperrorfile)
-            
+
     def queryfinish(self):
         try:
             self.oklock.acquire()
@@ -592,7 +600,7 @@ class my_ssl_wrap(object):
                     c.close()
                 elif s:
                     s.close()
-                    
+
     def getgooglesvrname(self,conn,sock,ip):
         try:
             myreq = my_ssl_wrap.httpreq % ip
@@ -696,31 +704,32 @@ class Ping(threading.Thread):
             Ping.ncount_lock.acquire()
             Ping.ncount -= 1
             Ping.ncount_lock.release()
-    
-    @staticmethod 
+
+    @staticmethod
     def getCount():
         try:
             Ping.ncount_lock.acquire()
             return Ping.ncount
         finally:
             Ping.ncount_lock.release()
-    @staticmethod 
+    @staticmethod
     def addIPCount():
         try:
             Ping.ncount_lock.acquire()
             Ping.ipcnt += 1
         finally:
-            Ping.ncount_lock.release()    
-            
-            
+            Ping.ncount_lock.release()
+
+
 class RamdomIP(threading.Thread):
-    def __init__(self,checkqueue,cacheResult,cacheip):
+    def __init__(self,checkqueue,cacheResult,cacheip,g_googleipfile):
         threading.Thread.__init__(self)
         self.ipqueue = checkqueue
         self.cacheResult = cacheResult
         self.hadaddipcnt = 0
         self.cacheip = cacheip
-        
+        self.g_googleipfile = g_googleipfile
+
     def ramdomip(self):
         iplineslist = []
         skipokcnt = 0
@@ -728,9 +737,9 @@ class RamdomIP(threading.Thread):
         iplinelist = []
         totalipcnt = 0
         loaddefaultip = False
-        if os.path.exists(g_googleipfile):
+        if os.path.exists(self.g_googleipfile):
             try:
-                fp = open(g_googleipfile,"r")
+                fp = open(self.g_googleipfile,"r")
                 linecnt = 0
                 for line in fp:
                     data = line.strip("\r\n")
@@ -762,7 +771,7 @@ class RamdomIP(threading.Thread):
                 nbegin = from_string(begin)
                 nend = from_string(end)
                 iplinelist.append([nbegin,nend])
-        
+
         if g_checklastgoogleipfirst:
             num = 0
             for ip in self.cacheResult.filegwsipset:
@@ -774,7 +783,7 @@ class RamdomIP(threading.Thread):
                 self.hadaddipcnt += num
                 PRINT("load last gae ip cnt: %d" % num)
                 evt_ipramdomstart.set()
-                
+
         hadIPData = True
         putdata = False
         while hadIPData:
@@ -839,7 +848,7 @@ class RamdomIP(threading.Thread):
                 #PRINT("remote index: %d" % empytindex )
         if not evt_ipramdomstart.is_set():
             evt_ipramdomstart.set()
-        
+
     def run(self):
         PRINT("begin to get ramdom ip")
         self.ramdomip()
@@ -914,7 +923,7 @@ def dumpstacks():
             if line:
                 code.append("  %s" % (line.strip()))
     PRINT("\n".join(code))
-    
+
 def checksingleprocess(ipqueue,cacheResult,max_threads):
     threadlist = []
     threading.stack_size(96 * 1024)
@@ -942,7 +951,7 @@ def checksingleprocess(ipqueue,cacheResult,max_threads):
         ipqueue.queue.clear()
         evt_ipramdomend.set()
     cacheResult.close()
-    
+
 
 def sort_tmpokfile(nLastOKFileLineCnt):
     if os.path.exists(g_tmpokfile):
@@ -978,7 +987,7 @@ def sort_tmpokfile(nLastOKFileLineCnt):
                 else:
                     costime = int(ips[1])
                     if lastcostime > costime:
-                        needsortip = True 
+                        needsortip = True
                 lastcostime = costime
                 ipdict[ipint] = (costime,ips)
             if needsortip:
@@ -999,7 +1008,7 @@ def sort_tmpokfile(nLastOKFileLineCnt):
             PRINT("file %s no need sort" % g_tmpokfile)
 
 
-def list_ping():
+def list_ping(g_googleipfile, max_threads=g_maxthreads):
     if g_useOpenSSL == 1:
         PRINT("support PyOpenSSL")
     if g_usegevent == 1:
@@ -1014,15 +1023,15 @@ def list_ping():
     totalcachelen = oklen + errorlen
     if totalcachelen != 0:
         PRINT("load last result,ok cnt:%d,ok file line:%d,error cnt: %d" % (oklen,cacheResult.okfilelinecnt,errorlen) )
-    
-    ramdomip_thread = RamdomIP(checkqueue,cacheResult,lastokresult|lasterrorresult)
+
+    ramdomip_thread = RamdomIP(checkqueue,cacheResult,lastokresult|lasterrorresult,g_googleipfile)
     ramdomip_thread.setDaemon(True)
     ramdomip_thread.start()
-    checksingleprocess(checkqueue,cacheResult,g_maxthreads)
-    
+    checksingleprocess(checkqueue,cacheResult,max_threads)
+
     lastokresult.clear()
     lasterrorresult.clear()
-    
+
     cacheResult.flushFailIP()
     ip_list = cacheResult.getIPResult()
     ip_list.sort()
@@ -1036,7 +1045,7 @@ def list_ping():
     for ip in ip_list:
         domain = ip[2]
         if ip[0] > g_maxhandletimeout :
-            break        
+            break
         PRINT("[%s] %d ms,domain: %s,svr:%s" % (ip[1], ip[0], domain,ip[3]))
         if domain is not None:
             if ncount != 0:
@@ -1082,38 +1091,45 @@ def checkip(ip):
         c.close()
 
 
-def move_over(src, dest_dir):
-    dest = os.path.join(g_filedir, dest_dir + src)
-    src  = os.path.join(g_filedir, src)
-    if os.path.exists(dest):
-        os.remove(dest)
-    shutil.move(src, dest)
+def move_over(file, i):
+    filename = file.split(os.sep)[-1]
+    filename = filename.split('.')[0] + "-" + i + ".txt"
+    file_name = os.path.join(g_tmpdir, filename)
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    shutil.move(file, file_name)
+
+
+def main():
+    thread = raw_input("Please type max threads(default 50):")
+    thread = thread.replace(" ","")
+    if thread.isdigit():
+        g_maxthreads = int(thread)
+    else:
+        g_maxthreads = 50
+    files = os.listdir(g_pardir)
+    files.sort()
+    i = j = 0
+    n = len(files)
+    global g_googleipfile
+    for item in files:
+        j += 1
+        if "googleip-" in item:
+            i = re.findall(r'([0-9]+)',item)[0]
+            g_googleipfile = os.path.join(g_pardir, "googleip-%s.txt" % i)
+            evt_ipramdomend.clear()
+            print "\n", "="*80, "\nbegin check googleip-%s.txt" % i
+            list_ping(g_googleipfile, g_maxthreads)
+            if os.path.exists(g_tmpokfile): move_over(g_tmpokfile, i)
+            if os.path.exists(g_tmpnofile): move_over(g_tmpnofile, i)
+            if os.path.exists(g_tmperrorfile): move_over(g_tmperrorfile, i)
+            if os.path.exists("googleip-%s.txt" % i): os.remove("googleip-%s.txt" % i)
+        elif j == n and i == 0:
+            list_ping(g_googleipfile, g_maxthreads)
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         checkip(sys.argv[1])
     else:
-        files = os.listdir(g_filedir)
-        files.sort()
-        i = j = 0
-	n = len(files)
-        for item in files:
-	    j += 1
-            if "googleip-" in item:
-                i = re.findall(r'([0-9]+)',item)[0]
-                if os.path.exists("googleip-%s.txt" % i):
-                    g_googleipfile = os.path.join(g_filedir,"googleip-%s.txt" % i)
-                    evt_ipramdomend.clear()
-                    print "\n", "="*80, "\nbegin check googleip-%s.txt" % i
-                    list_ping()
-                    if not os.path.exists(g_filedir + "/tmp"): os.mkdir("tmp")
-                    if os.path.exists("ip_tmperror.txt"): os.rename("ip_tmperror.txt", "ip_tmperror-%s.txt" % i)
-                    if os.path.exists("ip_tmpno.txt"): os.rename("ip_tmpno.txt", "ip_tmpno-%s.txt" % i)
-                    if os.path.exists("ip_tmpok.txt"): os.rename("ip_tmpok.txt", "ip_tmpok-%s.txt" % i)
-                    if os.path.exists("ip_tmperror-%s.txt" % i): move_over("ip_tmperror-%s.txt" % i, "tmp/")
-                    if os.path.exists("ip_tmpno-%s.txt" % i): move_over("ip_tmpno-%s.txt" % i, "tmp/")
-                    if os.path.exists("ip_tmpok-%s.txt" % i): move_over("ip_tmpok-%s.txt" % i, "tmp/")
-                    if os.path.exists("googleip-%s.txt" % i): os.remove("googleip-%s.txt" % i)
-            elif j == n and i == 0:
-                list_ping()
+        main()

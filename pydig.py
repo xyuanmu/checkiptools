@@ -11,27 +11,32 @@ from pydig.common import LOGFILE, roll_file
 from ip_utils import check_ip_valid
 from iptools import generate_ip_range
 
+dig_filedir = os.path.dirname(os.path.abspath(__file__))
+dig_pardir = os.path.abspath(os.path.join(dig_filedir, os.path.pardir))
+dig_tmpdir = os.path.join(dig_pardir, "tmp")
+if not os.path.exists(dig_tmpdir):
+    os.mkdir(dig_tmpdir)
 
 #默认IP，当IP被判定为无效时使用此IP代替
 default_ip = '1.255.22.36'
 #默认读取的URL文件，优先级大于 dig_ipfile
-dig_urlfile = 'dig_url.txt'
+dig_urlfile = os.path.join(dig_pardir, 'dig_url.txt')
 #默认读取的IP文件，无此文件需手动输入网址或IP
-dig_ipfile = 'dig_ip.txt'
+dig_ipfile = os.path.join(dig_pardir, 'dig_ip.txt')
 #pydig日志文件，别修改
 dig_logfile = LOGFILE
 #pydig日志最大行数
 dig_loglength = 6000
 #pydig失败的IP文件
-dig_error = 'dig_tmperror.txt'
+dig_error = os.path.join(dig_tmpdir, 'dig_tmperror.txt')
 #pydig成功的IP文件
-dig_finished = 'dig_tmpfinished.txt'
+dig_finished = os.path.join(dig_tmpdir, 'dig_tmpfinished.txt')
 #pydig结束后整理的IP段文件
-dig_iprange = 'dig_range.txt'
+dig_iprange = os.path.join(dig_pardir, 'dig_range.txt')
 #pydig最大线程数
 dig_max_threads = 50
 #pydig结束后重新dig一次dig_error中的IP
-dig_redig_error = 0
+dig_redig_error = 1
 #pydig结束后整合IP段到 googleip.txt
 dig_sort_range = 0
 

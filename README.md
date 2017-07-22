@@ -19,7 +19,8 @@ CheckIpTools For Linux
 | pydig.py | `$ python pydig.py`，pydig 小工具，用于查找谷歌IP（GGC），[详细使用说明](https://github.com/xyuanmu/checkiptools/blob/master/python/pydig.md) |
 | googleip.txt | 整合后的IP段，可用于 [XX-Net](https://github.com/XX-net/XX-Net) 或者 GoGo Tester（记得保存IP段格式为 x.x.x.x/xx 并改名.ip结尾） |
 | ip_range_bad.txt | 包含IP段黑名单的文件，支持 checkgoogleip IP组格式，支持 # 注释 |
-| ip_range_origin.txt |包含原始IP段的文件，支持 checkgoogleip IP组格式，支持 # 注释，**以后只需将新IP段添加进来用 iptools.py 转换即可** |
+| ip_bad_csm.txt | 用户自定义IP段黑名单，新建一份文件即可 |
+| ip_range_origin.txt | 包含原始IP段的文件，支持 checkgoogleip IP组格式，支持 # 注释，**以后只需将新IP段添加进来用 iptools.py 转换即可** |
 
 ## 工具预览：
 ![checkiptools](https://cloud.githubusercontent.com/assets/12442896/13596701/0280b8da-e54f-11e5-93c1-4dacc70ca4ae.png)

@@ -18,18 +18,35 @@ import ip_utils
 # "xxx.xxx.xxx.xxx/xx"      （掩码格式）
 # "xxx.xxx.xxx.xxx"         （单个ip）
 
+g_filedir = os.path.dirname(os.path.abspath(__file__))
+if os.name == "nt":
+    g_pardir = os.path.abspath(os.path.join(g_filedir, os.path.pardir))
+else:
+    g_pardir = g_filedir
+
 # 包含原始IP段的文件
-ip_range_origin = "ip_range_origin.txt"
-input_good_range_lines = open(ip_range_origin).read()
-
-# 包含IP段黑名单的文件
-ip_range_bad = "ip_range_bad.txt"
-input_bad_ip_range_lines = open(ip_range_bad).read()
-input_bad_ip_range_lines2 = "\n"# + open("ip_range_bad2.txt").read()
-input_bad_ip_range_lines = input_bad_ip_range_lines + input_bad_ip_range_lines2
-
+ip_origin_filename = "ip_range_origin.txt"
+ip_origin = os.path.join(g_pardir, ip_origin_filename)
 # IP转换后输出的文件
-ip_output_file = "ip_output.txt"
+ip_output_filename = "ip_output.txt"
+ip_output_file = os.path.join(g_pardir, ip_output_filename)
+# checkgoogleip 生成的可用IP文件
+ip_tmpok_filename = "ip_tmpok.txt"
+ip_tmpok_file = os.path.join(g_pardir, ip_tmpok_filename)
+# 谷歌IP段文件
+googleip_fimename = "googleip.txt"
+googleip = os.path.join(g_pardir, googleip_fimename)
+# 包含IP段黑名单的文件
+ip_range_bad = os.path.join(g_filedir, "ip_range_bad.txt")
+# 自定义IP黑名单的文件
+ip_range_bad_csm = os.path.join(g_pardir, "ip_bad_csm.txt")
+
+input_good_range_lines = open(ip_origin).read()
+input_bad_ip_range_lines = open(ip_range_bad).read()
+# 自定义IP黑名单
+if os.path.isfile(ip_range_bad_csm):
+    input_bad_ip_range_lines += "\n" + open(ip_range_bad_csm).read()
+
 
 if os.name == "nt":
     coding = "GBK"
@@ -211,7 +228,7 @@ def generate_ip_range(feature='', good_range=None):
         end = ip_range[1]
         ip_out_lists.append(ip_utils.ip_num_to_string(begin) + "-" + ip_utils.ip_num_to_string(end))
     if int(feature) == 2: ip_out_lists = ip_range_to_cidr(ip_out_lists)
-    open('googleip.txt', 'w').write('\n'.join(x for x in ip_out_lists) + '\n')
+    open(googleip, 'w').write('\n'.join(x for x in ip_out_lists) + '\n')
 
 
 def test_ip_num(begin, end):
@@ -245,8 +262,8 @@ def test_ip_amount(ip_lists):
 
 # 统计IP数量，超过1KW提示分割
 def test_load():
-    print("\nBegin test load googleip.txt")
-    fd = open('googleip.txt')
+    print("\nBegin test load %s" % googleip_fimename)
+    fd = open(googleip)
 
     i = 1
     amount = 0
@@ -282,7 +299,7 @@ def test_load():
         amount += num
         ip_lists.append(line)
 
-        filename = 'googleip-%03d.txt' % i
+        filename = '%s-%03d.txt' % (googleip_fimename.split(".")[0], i)
         if amount > i*ip_rip:
             print "ip amount over %s" % format(i*ip_rip, ',')
             ip_lists = ip_range_to_cidr(ip_lists)
@@ -311,7 +328,7 @@ def ip_range_to_cidr(ip_str_lists):
 
 # convert_ip_tmpok(延时, 格式, 有效IP数) 转换/提取 ip_tmpok.txt
 def convert_ip_tmpok(timeout, format, good_ip_num=0):
-    with open('ip_tmpok.txt') as ip_tmpok:
+    with open(ip_tmpok_file) as ip_tmpok:
         new_line_list = sort_tmpok(ip_tmpok, format, timeout)
     if format == 1:
         out = '|'.join(x for x in new_line_list)
@@ -415,57 +432,55 @@ def convertip(iplist):
 
 # 整合tmp目录下所有的可用IP
 def integrate_tmpok():
-    tmpdir = "tmp/"
+    tmpdir = os.path.join(g_pardir, "tmp")
     files  = os.listdir(tmpdir)
     files.sort()
     ip_tmpok_lists = []
     for item in files:
         if "ip_tmpok-" in item:
             i = re.findall(r'([0-9]+)',item)[0]
-            ip_tmpok_lists += open("tmp/ip_tmpok-%s.txt" % i).readlines()
+            ip_tmpok_lists += open(os.path.join(tmpdir, "ip_tmpok-%s.txt" % i)).readlines()
     if len(ip_tmpok_lists) < 3:
-        print "\n    doesn't find any ip_tmpok in tmp/ \n"
+        print "\n    doesn't find any %s in tmp/ \n" % ip_tmpok_filename
     else:
         #print ip_tmpok_lists
         try:
-            ip_tmpok_lists += open("ip_tmpok.txt").readlines()
+            ip_tmpok_lists += open(ip_tmpok_file).readlines()
         except:
             pass
         out_lists = sort_tmpok(ip_tmpok_lists, 4)
         output = '\n'.join(x for x in out_lists)
         print output + "\n"
-        open("ip_tmpok.txt", "w").write(output + '\n')
+        open(ip_tmpok_file, "w").write(output + '\n')
 
 
 # 选项
 def main():
     add_tmpok = "   "
-    if os.path.exists("tmp/"):
-        add_tmpok = u"8. 整合tmp目录下的可用IP到 ip_tmpok.txt \n\n    ".encode(coding)
+    if os.path.exists(os.path.join(g_pardir, "tmp", "ip_tmpok-001.txt")):
+        add_tmpok = u"7. 整合tmp目录下的可用IP到 {0} \n\n    ".encode(coding).format(ip_tmpok_filename)
     cmd = raw_input(
     u"""
 请选择需要处理的操作, 输入对应的数字并按下回车:
 
- 1. 提取 ip_tmpok.txt 中的IP, 用｜分隔以及 json 格式, 并生成 {0}
+ 1. 提取 {1} 中的IP, 用｜分隔以及 json 格式, 并生成 {0}
 
- 2. 提取 ip_tmpok.txt 中有效IP的IP段, 并生成 {0}
+ 2. 提取 {1} 中有效IP的IP段, 并生成 {0}
 
- 3. 转换 ip_tmpok.txt 中的IP为 XX-Net 格式, 并生成 {0}
+ 3. 转换 {1} 中的IP为 XX-Net 格式, 并生成 {0}
 
- 4. 整合 ip_range_origin.txt 中的IP段, 并生成 googleip.txt
+ 4. 整合 {2} 中的IP段, 并生成 {3}
 
- 5. 统计 googleip.txt 中的IP数量, 超过1KW提示分割
+ 5. 统计 {3} 中的IP数量, 超过1KW提示分割
 
  6. 同时执行4、5两条命令
 
- 7. IP格式互转 GoAgent <==> GoProxy, 并生成 {0}
-
- """.encode(coding).format(ip_output_file) + add_tmpok
+ """.encode(coding).format(ip_output_filename, ip_tmpok_filename, ip_origin_filename, googleip_fimename) + add_tmpok
     )
     cmd = cmd.replace(" ","")
     if cmd == '1' or cmd == '2' or cmd == '3':
-        if not os.path.isfile('ip_tmpok.txt'):
-            print "\n    ip_tmpok.txt doesn't exist\n"
+        if not os.path.isfile(ip_tmpok_file):
+            print "\n    %s doesn't exist\n" % ip_tmpok_filename
             return
     if cmd == '1':
         timeout = raw_input( u"\n请输入IP延时（不用单位）, 默认2000毫秒: ".encode(coding) )
@@ -486,10 +501,10 @@ def main():
     elif cmd == '6':
         generate_ip_range()
         test_load()
-    elif cmd == '7':
-        iplist = raw_input( u"\n请输入需要转换的IP, 可使用右键->粘贴: \n".encode(coding) )
-        convertip(iplist)
-    elif cmd == '8':
+    #elif cmd == '7':
+    #    iplist = raw_input( u"\n请输入需要转换的IP, 可使用右键->粘贴: \n".encode(coding) )
+    #    convertip(iplist)
+    elif cmd == '7' and add_tmpok != "   ":
         integrate_tmpok()
     else:
         main()
