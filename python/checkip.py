@@ -77,11 +77,18 @@ g_handshaketimeout = 7
 
 g_filedir = os.path.dirname(os.path.abspath(__file__))
 g_cacertfile = os.path.join(g_filedir, "cacert.pem")
-g_pardir = os.path.abspath(os.path.join(g_filedir, os.path.pardir))
+if os.name == "nt":
+    g_pardir = os.path.abspath(os.path.join(g_filedir, os.path.pardir))
+else:
+    g_pardir = g_filedir
+g_tmpdir = os.path.join(g_pardir, "tmp")
+#建立缓存文件夹
+if not os.path.exists(g_tmpdir):
+    os.mkdir(g_tmpdir)
 g_ipfile = os.path.join(g_pardir, "ip.txt")
-g_tmpnofile = os.path.join(g_pardir, "ip_tmpno.txt")
 g_tmpokfile = os.path.join(g_pardir, "ip_tmpok.txt")
-g_tmperrorfile = os.path.join(g_pardir, "ip_tmperror.txt")
+g_tmpnofile = os.path.join(g_tmpdir, "ip_tmpno.txt")
+g_tmperrorfile = os.path.join(g_tmpdir, "ip_tmperror.txt")
 g_googleipfile = os.path.join(g_pardir, "googleip.txt")
 
 
@@ -1001,7 +1008,7 @@ def sort_tmpokfile(nLastOKFileLineCnt):
             PRINT("file %s no need sort" % g_tmpokfile)
 
 
-def list_ping(g_googleipfile):
+def list_ping(g_googleipfile, max_threads=g_maxthreads):
     if g_useOpenSSL == 1:
         PRINT("support PyOpenSSL")
     if g_usegevent == 1:
@@ -1020,7 +1027,7 @@ def list_ping(g_googleipfile):
     ramdomip_thread = RamdomIP(checkqueue,cacheResult,lastokresult|lasterrorresult,g_googleipfile)
     ramdomip_thread.setDaemon(True)
     ramdomip_thread.start()
-    checksingleprocess(checkqueue,cacheResult,g_maxthreads)
+    checksingleprocess(checkqueue,cacheResult,max_threads)
 
     lastokresult.clear()
     lasterrorresult.clear()
@@ -1084,15 +1091,22 @@ def checkip(ip):
         c.close()
 
 
-def move_over(src, dest_dir):
-    dest = os.path.join(g_pardir, dest_dir + src)
-    src  = os.path.join(g_pardir, src)
-    if os.path.exists(dest):
-        os.remove(dest)
-    shutil.move(src, dest)
+def move_over(file, i):
+    filename = file.split(os.sep)[-1]
+    filename = filename.split('.')[0] + "-" + i + ".txt"
+    file_name = os.path.join(g_tmpdir, filename)
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    shutil.move(file, file_name)
 
 
 def main():
+    thread = raw_input("Please type max threads(default 50):")
+    thread = thread.replace(" ","")
+    if thread.isdigit():
+        g_maxthreads = int(thread)
+    else:
+        g_maxthreads = 50
     files = os.listdir(g_pardir)
     files.sort()
     i = j = 0
@@ -1102,20 +1116,16 @@ def main():
         j += 1
         if "googleip-" in item:
             i = re.findall(r'([0-9]+)',item)[0]
-            g_googleipfile = os.path.join(g_pardir,"googleip-%s.txt" % i)
+            g_googleipfile = os.path.join(g_pardir, "googleip-%s.txt" % i)
             evt_ipramdomend.clear()
             print "\n", "="*80, "\nbegin check googleip-%s.txt" % i
-            list_ping(g_googleipfile)
-            if not os.path.exists(g_pardir + "/tmp"): os.mkdir("tmp")
-            if os.path.exists("ip_tmperror.txt"): os.rename("ip_tmperror.txt", "ip_tmperror-%s.txt" % i)
-            if os.path.exists("ip_tmpno.txt"): os.rename("ip_tmpno.txt", "ip_tmpno-%s.txt" % i)
-            if os.path.exists("ip_tmpok.txt"): os.rename("ip_tmpok.txt", "ip_tmpok-%s.txt" % i)
-            if os.path.exists("ip_tmperror-%s.txt" % i): move_over("ip_tmperror-%s.txt" % i, "tmp/")
-            if os.path.exists("ip_tmpno-%s.txt" % i): move_over("ip_tmpno-%s.txt" % i, "tmp/")
-            if os.path.exists("ip_tmpok-%s.txt" % i): move_over("ip_tmpok-%s.txt" % i, "tmp/")
+            list_ping(g_googleipfile, g_maxthreads)
+            if os.path.exists(g_tmpokfile): move_over(g_tmpokfile, i)
+            if os.path.exists(g_tmpnofile): move_over(g_tmpnofile, i)
+            if os.path.exists(g_tmperrorfile): move_over(g_tmperrorfile, i)
             if os.path.exists("googleip-%s.txt" % i): os.remove("googleip-%s.txt" % i)
         elif j == n and i == 0:
-            list_ping(g_googleipfile)
+            list_ping(g_googleipfile, g_maxthreads)
 
 
 if __name__ == '__main__':
